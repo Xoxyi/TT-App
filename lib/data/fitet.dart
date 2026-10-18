@@ -337,11 +337,12 @@ List<Fixture> parseFitetCalendar(String html) {
       }
       continue;
     }
-    if (giornata == null || tds.length < 8) continue;
+    // 8 cells: first leg + return leg; 5 cells: single-leg competitions
+    // such as the Supercoppa (date, time, score, home, away).
+    if (giornata == null || tds.length < 5) continue;
     final t = tds.map((td) => _clean(td.text)).toList();
     if (t[3].isEmpty || t[4].isEmpty) continue;
     final s1 = _teamScore(t[2]);
-    final s2 = _teamScore(t[5]);
     first.add(Fixture(
       giornata: giornata,
       date: _dateTime(t[0], t[1]),
@@ -351,6 +352,8 @@ List<Fixture> parseFitetCalendar(String html) {
       awayScore: s1?.$2,
       matchId: _incontro(tds[2]),
     ));
+    if (tds.length < 8) continue;
+    final s2 = _teamScore(t[5]);
     back.add(Fixture(
       giornata: giornata,
       date: _dateTime(t[7], t[6]),

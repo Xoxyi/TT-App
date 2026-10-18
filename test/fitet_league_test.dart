@@ -57,6 +57,19 @@ void main() {
     expect(fixtures.map((f) => f.giornata).reduce((a, b) => a > b ? a : b), 14);
   });
 
+  test('parses a single-leg calendar (Supercoppa)', () {
+    final fixtures = parseFitetCalendar(FakeFitet.page('calendar_single_leg.html'));
+    expect(fixtures, isNotEmpty);
+    final first = fixtures.first;
+    expect(first.giornata, 1);
+    expect(first.date, DateTime(2026, 9, 25, 17, 30));
+    expect(first.home, 'POLISPORTIVA BAGNOLESE ASD');
+    expect(first.away, 'TOP SPIN MESSINA AMTIVO');
+    expect(first.homeScore, 0);
+    expect(first.awayScore, 2);
+    expect(first.matchId, '374981');
+  });
+
   test('parses the team roster and a player’s set scores', () {
     final roster = parseFitetRoster(FakeFitet.page('roster.html'));
     expect(roster, <String, String>{
