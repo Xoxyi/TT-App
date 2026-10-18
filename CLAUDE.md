@@ -74,9 +74,12 @@ imported competition with the same name, finds team id from standings) →
 
 ## Status / open items
 - Compiles; `flutter test` and `flutter analyze` clean (2026-10-18).
-- Verified in the web build (2026-10-18): A/2 Gir.B (CAM 19, SQUADRA 12019)
-  gets standings, fixtures, roster and set scores; Gabriele Piciulin found as
-  707200 (championships CAM 3 and CAM 47). Still to check on the phone.
+- Verified in the web build and on the phone, release APK (2026-10-18):
+  A/2 Gir.B (CAM 19, SQUADRA 12019) gets standings, fixtures, roster and set
+  scores; Gabriele Piciulin found as 707200 (championships CAM 3 and CAM 47);
+  data persists across restarts and the 1-hour throttle holds.
+- To update the phone without losing data use `adb install -r` with the APK
+  (`flutter install` uninstalls first and wipes the app's data).
 - `_discoverLeague` + `_completeLeague` fetch the same standings page twice.
 - Distribution: Play internal testing guide `PLAY_INTERNAL_TESTING.md`;
   iOS Ad Hoc via Codemagic + Firebase: `codemagic.yaml`, `IOS_ADHOC_GUIDE.md`
