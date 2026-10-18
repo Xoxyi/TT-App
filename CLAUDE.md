@@ -83,8 +83,11 @@ imported competition with the same name, finds team id from standings) →
 - `_discoverLeague` + `_completeLeague` fetch the same standings page twice.
 - Distribution: Play internal testing guide `PLAY_INTERNAL_TESTING.md`;
   iOS Ad Hoc via Codemagic + Firebase: `codemagic.yaml`, `IOS_ADHOC_GUIDE.md`
-  (untested). Web: `WEB_GUIDE.md` (proxy not deployed yet).
-- Code goes in a private GitHub repo `tt-piciulin` (being set up by Andrea).
+  (untested). Web: live at https://xoxyi.github.io/TT-App/ (GitHub Pages,
+  `.github/workflows/pages.yml`, deploys on push to `main`). FITeT proxy:
+  Cloudflare Worker https://fitet-proxy.tt-piciulin.workers.dev (deploy with
+  `npx wrangler deploy` from `web_proxy/`), set as repo variable `FITET_PROXY`.
+- Code: public GitHub repo `Xoxyi/TT-App`.
 
 ## Rules
 - Keep FITeT traffic low (sequential requests, pauses, throttles).

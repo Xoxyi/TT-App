@@ -39,8 +39,9 @@ the Actions tab → "GitHub Pages" → Run workflow).
 
 One-time setup:
 
-1. **Proxy**: create a free Cloudflare account and a Worker, paste
-   `web_proxy/worker.js`, and add the Worker variable
+1. **Proxy** (done: https://fitet-proxy.tt-piciulin.workers.dev; to update it,
+   run `npx wrangler deploy` from `web_proxy/`): create a free Cloudflare
+   account and a Worker, paste `web_proxy/worker.js`, and add the Worker variable
    `ALLOWED_ORIGINS` = `https://xoxyi.github.io`. Deploy and note its address,
    e.g. `https://fitet-proxy.<your-account>.workers.dev`. The Worker caches
    pages for 10 minutes, so several people using the site don't multiply the
