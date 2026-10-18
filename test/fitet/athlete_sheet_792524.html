@@ -1,0 +1,76 @@
+<html>
+<head>
+<meta http-equiv="Content-Language" content="it">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+</head>
+<body>
+<div class="container">
+	<div class="row">
+		<div class="col-sm-12"><h3>Attivita' agonistica 2026/27 dell'atleta Zito Andrea (995253)</h3></div>
+	</div>
+	<div class="row">
+		<div class="col-sm-6">
+			<ul class="list-group">
+                <li class="list-group-item">					    <span class="badge">1542</span>
+						<a id="all" onclick='getScheda(792524, 247, 0, 0)' title="Scheda_dettaglio">classifica al 27/09/2026</a>                </li>
+			</ul>
+		</div>
+		<div class="col-sm-6">
+			<ul class="list-group">
+				<li class="list-group-item">
+					<span class="badge">18</span>totale incontri disputati nella stagione
+				</li>
+			</ul>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-6">
+			<h3><span class="label label-warning">Campionati squadre</span></h3>
+			<table class="table table-condensed">
+				<thead>
+					<tr>
+						<th>campionato</th>
+						<th>squadra</th>
+						<th>perc.</th>
+					</tr>
+				</thead>
+				<tbody>						<tr>
+						<td><h6><a href="risultati/campionati/campionati.php?CAM=204&CONC=0">C/2 Gir.D</a></h6></td><td><h6>TT.Torino B</h6></td><td><h6>100%</h6></td></tr>				</tbody>
+			</table>
+		</div>
+
+		<div class="col-sm-6">
+			<h3><span class="label label-success">Tornei individuali</span></h3>
+			<table class="table table-condensed">
+				<thead>
+					<tr>
+						<th>data</th>
+						<th>torneo</th>
+						<th>luogo</th>
+						<th>Pos.</th>
+					</tr>
+				</thead>
+				<tbody><td><h6>29/08/2026</h6></td>						<td><h6><a href="risultati/tornei/visualizza_risultati.php?IDT=2&ANNO=41&COM=2">Torneo Open Enjoy</h6></td><td><h6>Moncalieri (TO)</h6></td></tr><td><h6>05/09/2026</h6></td>						<td><h6><a href="risultati/tornei/visualizza_risultati.php?IDT=4&ANNO=41&COM=2">Torneo Regionale Ordinario di Categoria Torino</h6></td><td><h6>Torino</h6></td></tr><td><h6>19/09/2026</h6></td>						<td><h6><a href="risultati/tornei/visualizza_risultati.php?IDT=5&ANNO=41&COM=2">2^ Torneo Open Provincia Granda</h6></td><td><h6>Bra (CN)</h6></td></tr>				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+    function getScheda(atleta, rank, z, avv) {
+        $('#ranking').html('<img src="images/LoaderIcon.gif" />');
+        someData = {
+            'ATLETA': atleta,
+            'ID_CLASS': rank,
+            'ZU': z,
+            'AVVERSARIO': avv
+        };
+        jQuery.ajax({
+            url: "risultati/new_rank/dettaglioatleta_unica.php",
+            data: someData,
+            success:function(data){$('#ranking').html(data);}
+        });
+    }
+</script>
+</body>
+</html>

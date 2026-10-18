@@ -1,0 +1,6 @@
+# Copy this file to key.properties (same folder) and fill in your values.
+# key.properties is ignored by Git: never share it or the keystore.
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=upload
+storeFile=C:/dev/Table tennis App/keys/upload-keystore.jks

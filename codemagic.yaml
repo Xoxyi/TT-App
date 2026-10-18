@@ -1,0 +1,58 @@
+# Codemagic: builds the iPhone app (Ad Hoc, only for registered iPhones)
+# and sends it to Firebase App Distribution. See IOS_ADHOC_GUIDE.md.
+#
+# Environment variable groups to create in Codemagic (all marked "Secret"):
+#   apple:    APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_KEY_IDENTIFIER,
+#             APP_STORE_CONNECT_PRIVATE_KEY (contents of the .p8 file),
+#             CERTIFICATE_PRIVATE_KEY (contents of ios_distribution_private_key)
+#   firebase: FIREBASE_SERVICE_ACCOUNT (contents of the JSON key),
+#             FIREBASE_IOS_APP_ID (e.g. 1:1234567890:ios:abc123...)
+workflows:
+  ios-adhoc:
+    name: iPhone Ad Hoc
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    environment:
+      groups:
+        - apple
+        - firebase
+      vars:
+        BUNDLE_ID: com.andreazito.tableTennisApp
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Set up keychain
+        script: keychain initialize
+      - name: Fetch Ad Hoc signing files (created on the first run)
+        script: |
+          # The Ad Hoc profile lists the iPhones registered in your Apple account.
+          # After registering a new iPhone, delete the old Ad Hoc profile on
+          # developer.apple.com (Profiles) so this step creates a new one.
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_ADHOC \
+            --certificate-key=@env:CERTIFICATE_PRIVATE_KEY \
+            --create
+      - name: Add certificates to keychain
+        script: keychain add-certificates
+      - name: Use the profiles in the Xcode project
+        script: xcode-project use-profiles
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Install pods
+        script: find . -name "Podfile" -execdir pod install \;
+      - name: Build ipa
+        script: |
+          flutter build ipa --release \
+            --build-number=$BUILD_NUMBER \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      firebase:
+        firebase_service_account: $FIREBASE_SERVICE_ACCOUNT
+        ios:
+          app_id: $FIREBASE_IOS_APP_ID
+          groups:
+            - friends
