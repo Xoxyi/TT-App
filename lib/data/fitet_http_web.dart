@@ -5,9 +5,13 @@ import 'fitet_http.dart';
 
 /// Browser: requests go through the FITeT proxy (see `tool/fitet_proxy.dart`
 /// and `web_proxy/worker.js`), set at build time with
-/// `--dart-define=FITET_PROXY=https://...`.
+/// `--dart-define=FITET_PROXY=https://...`. Built with an empty FITET_PROXY,
+/// the web version shows the saved/built-in data only.
 class PlatformFitetHttp implements FitetHttp {
   static const String proxy = String.fromEnvironment('FITET_PROXY', defaultValue: 'http://localhost:8787');
+
+  @override
+  bool get available => proxy.isNotEmpty;
 
   @override
   Future<FitetHttpResponse> send(
@@ -17,6 +21,7 @@ class PlatformFitetHttp implements FitetHttp {
     List<int>? body,
     required Duration timeout,
   }) async {
+    if (!available) throw UnsupportedError('FITeT updates are only in the phone app');
     final base = Uri.parse(proxy);
     final target = base.replace(
       path: '${base.path.replaceFirst(RegExp(r'/$'), '')}${uri.path}',

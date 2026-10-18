@@ -579,6 +579,9 @@ class FitetClient {
   /// Sends the requests (direct on Android/iOS, through a proxy on the web).
   final FitetHttp _http = FitetHttp();
 
+  /// False on a web build without a FITeT proxy.
+  bool get available => _http.available;
+
   /// Longest time one request may take, from connecting to the last byte.
   static const Duration requestTimeout = Duration(seconds: 20);
 

@@ -916,7 +916,12 @@ class FitetStatusLine extends StatelessWidget {
     final last = state.lastFitetSync;
     final String text;
     Color color = AppColors.muted;
-    if (state.fitetSyncing) {
+    final available = state.fitetAvailable;
+    if (!available) {
+      text = last == null
+          ? 'Web preview · FITeT updates only in the phone app'
+          : 'FITeT · data from ${_ago(last)} · updates only in the phone app';
+    } else if (state.fitetSyncing) {
       text = state.fitetStatus == null
           ? 'Updating from FITeT…'
           : 'Updating from FITeT · ${state.fitetStatus}…';
@@ -929,10 +934,10 @@ class FitetStatusLine extends StatelessWidget {
       text = 'FITeT · updated ${_ago(last)}';
     }
     return Semantics(
-      button: !state.fitetSyncing,
+      button: available && !state.fitetSyncing,
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: state.fitetSyncing ? null : () => state.syncFitet(force: true),
+        onTap: !available || state.fitetSyncing ? null : () => state.syncFitet(force: true),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(

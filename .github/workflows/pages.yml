@@ -1,9 +1,9 @@
 # Builds the web version and publishes it on GitHub Pages
 # (https://xoxyi.github.io/TT-App/). See WEB_GUIDE.md.
 #
-# Needs the repository variable FITET_PROXY (Settings → Secrets and variables
-# → Actions → Variables), e.g. https://fitet-proxy.<account>.workers.dev,
-# and Settings → Pages → Source: "GitHub Actions".
+# Settings → Pages → Source: "GitHub Actions". Optional repository variable
+# FITET_PROXY (the Cloudflare Worker address): without it the site shows the
+# built-in data only, with no FITeT updates.
 name: GitHub Pages
 
 on:
@@ -25,14 +25,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check the FITeT proxy address
-        env:
-          FITET_PROXY: ${{ vars.FITET_PROXY }}
-        run: |
-          if [ -z "$FITET_PROXY" ]; then
-            echo "::error::Set the repository variable FITET_PROXY (the Cloudflare Worker address). See WEB_GUIDE.md."
-            exit 1
-          fi
       - uses: subosito/flutter-action@v2
         with:
           channel: stable

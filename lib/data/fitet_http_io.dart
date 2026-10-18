@@ -5,6 +5,9 @@ import 'fitet_http.dart';
 /// Android/iOS: direct requests with dart:io.
 class PlatformFitetHttp implements FitetHttp {
   @override
+  bool get available => true;
+
+  @override
   Future<FitetHttpResponse> send(
     String method,
     Uri uri, {

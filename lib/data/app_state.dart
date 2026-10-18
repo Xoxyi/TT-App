@@ -77,6 +77,9 @@ class AppState extends ChangeNotifier {
   /// Downloads FITeT pages (replaceable in tests).
   FitetClient fitetClient = FitetClient();
 
+  /// False on a web build without a FITeT proxy (no updates possible).
+  bool get fitetAvailable => fitetClient.available;
+
   /// Pause between two FITeT requests, to stay gentle with the portal.
   Duration fitetPause = const Duration(milliseconds: 800);
 
@@ -509,6 +512,7 @@ class AppState extends ChangeNotifier {
   /// Skips what was updated less than [fitetMinInterval] ago unless [force].
   /// One request at a time, with [fitetPause] between them.
   Future<void> syncFitet({bool force = false, String? onlyPlayerId}) async {
+    if (!fitetAvailable) return;
     if (fitetSyncing) {
       // A player added or linked during an update gets their own update after it.
       if (onlyPlayerId != null) _queuedSync.add(onlyPlayerId);

@@ -86,7 +86,7 @@ class _ChampionshipScreenState extends State<ChampionshipScreen> {
                   icon: Icons.sync_rounded,
                   tooltip: 'Update results',
                   color: state.fitetSyncing ? AppColors.muted : AppColors.text,
-                  onPressed: state.fitetSyncing ? null : () => state.syncFitet(force: true),
+                  onPressed: !state.fitetAvailable || state.fitetSyncing ? null : () => state.syncFitet(force: true),
                 ),
               ),
               const SizedBox(height: 16),

@@ -18,6 +18,9 @@ class FitetHttpResponse {
 abstract class FitetHttp {
   factory FitetHttp() = platform.PlatformFitetHttp;
 
+  /// False on a web build made without a FITeT proxy: nothing can be downloaded.
+  bool get available;
+
   Future<FitetHttpResponse> send(
     String method,
     Uri uri, {
