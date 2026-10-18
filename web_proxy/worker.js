@@ -3,8 +3,8 @@
 // the app reads, only from the origins below. GET answers are cached for
 // 10 minutes so several browsers don't multiply the traffic to the portal.
 //
-// Set ALLOWED_ORIGINS (comma separated, e.g. "https://tt-piciulin.pages.dev")
-// as a Worker variable. See web_proxy/README.md.
+// Set ALLOWED_ORIGINS (comma separated, e.g. "https://xoxyi.github.io")
+// as a Worker variable. See WEB_GUIDE.md.
 
 const FITET = 'https://portale.fitet.org';
 const ALLOWED_PATH = /^\/(risultati\/[A-Za-z0-9_\/]+\.(php|asp)|scheda_unica_i\.php|ajax\.php)$/;

@@ -31,20 +31,32 @@ The local proxy listens on `http://localhost:8787` (the web build's default),
 accepts only `localhost` pages, and sends one request at a time with a 500 ms
 pause. Use `-d edge` if Chrome isn't installed.
 
-## Put it online
+## Put it online (GitHub Pages)
 
-1. **Proxy**: create a free Cloudflare Worker, paste `web_proxy/worker.js`,
-   and add the variable `ALLOWED_ORIGINS` with the address of the site (step 2),
-   e.g. `https://tt-piciulin.pages.dev`. The Worker caches pages for 10 minutes,
-   so several people using the site don't multiply the traffic to FITeT.
-2. **Site**: build with the Worker's address and upload `build/web` to any
-   static host (Cloudflare Pages, GitHub Pages, Firebase Hosting):
+The workflow `.github/workflows/pages.yml` builds the site and publishes it at
+**https://xoxyi.github.io/TT-App/** on every push to `main` (or by hand from
+the Actions tab → "GitHub Pages" → Run workflow).
 
-   ```bash
-   flutter build web --release --dart-define=FITET_PROXY=https://fitet-proxy.<your-account>.workers.dev
-   ```
+One-time setup:
 
-   For GitHub Pages under `/<repo>/`, also pass `--base-href /<repo>/`.
+1. **Proxy**: create a free Cloudflare account and a Worker, paste
+   `web_proxy/worker.js`, and add the Worker variable
+   `ALLOWED_ORIGINS` = `https://xoxyi.github.io`. Deploy and note its address,
+   e.g. `https://fitet-proxy.<your-account>.workers.dev`. The Worker caches
+   pages for 10 minutes, so several people using the site don't multiply the
+   traffic to FITeT.
+2. **Repository variable**: GitHub → Settings → Secrets and variables →
+   Actions → Variables → New: `FITET_PROXY` = the Worker address.
+   The workflow stops with an error if it is missing.
+3. **Pages**: GitHub → Settings → Pages → Source: **GitHub Actions**.
+   A private repository needs a paid plan (GitHub Pro) for Pages; on the free
+   plan the repository has to be public. Either way the **site is public**:
+   anyone with the link sees the players' names and results.
+
+Other static hosts work too: build with
+`flutter build web --release --dart-define=FITET_PROXY=<worker address>`
+(plus `--base-href /<folder>/` when the site is not at the domain root) and
+upload `build/web`.
 
 Notes:
 - Data lives in each browser separately; clearing site data resets the app.

@@ -1,0 +1,61 @@
+# Builds the web version and publishes it on GitHub Pages
+# (https://xoxyi.github.io/TT-App/). See WEB_GUIDE.md.
+#
+# Needs the repository variable FITET_PROXY (Settings → Secrets and variables
+# → Actions → Variables), e.g. https://fitet-proxy.<account>.workers.dev,
+# and Settings → Pages → Source: "GitHub Actions".
+name: GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the FITeT proxy address
+        env:
+          FITET_PROXY: ${{ vars.FITET_PROXY }}
+        run: |
+          if [ -z "$FITET_PROXY" ]; then
+            echo "::error::Set the repository variable FITET_PROXY (the Cloudflare Worker address). See WEB_GUIDE.md."
+            exit 1
+          fi
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.7
+          cache: true
+      - run: flutter pub get
+      - run: flutter test
+      - name: Build web
+        run: >
+          flutter build web --release
+          --base-href "/${{ github.event.repository.name }}/"
+          --dart-define=FITET_PROXY=${{ vars.FITET_PROXY }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
