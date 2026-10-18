@@ -1,4 +1,5 @@
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -87,6 +88,19 @@ ThemeData buildDarkTheme() {
       bodyColor: AppColors.text,
       displayColor: AppColors.text,
     ),
+    // In the browser the default zoom transition redraws both pages at a new
+    // scale every frame (no snapshots on the web); a short fade + slide of
+    // the new page only is much lighter.
+    pageTransitionsTheme: kIsWeb
+        ? const PageTransitionsTheme(builders: <TargetPlatform, PageTransitionsBuilder>{
+            TargetPlatform.android: WebPageTransitionsBuilder(),
+            TargetPlatform.iOS: WebPageTransitionsBuilder(),
+            TargetPlatform.macOS: WebPageTransitionsBuilder(),
+            TargetPlatform.windows: WebPageTransitionsBuilder(),
+            TargetPlatform.linux: WebPageTransitionsBuilder(),
+            TargetPlatform.fuchsia: WebPageTransitionsBuilder(),
+          })
+        : null,
     dividerColor: AppColors.line,
     splashFactory: InkRipple.splashFactory,
     snackBarTheme: const SnackBarThemeData(
@@ -95,4 +109,46 @@ ThemeData buildDarkTheme() {
       behavior: SnackBarBehavior.floating,
     ),
   );
+}
+
+/// Web page transition: the new page fades in and slides up a little; the
+/// page underneath stays still.
+class WebPageTransitionsBuilder extends PageTransitionsBuilder {
+  const WebPageTransitionsBuilder();
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 220);
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(curved),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Starts downloading the text fonts and waits for them (web only), so the
+/// first screens don't switch font in the middle of an animation.
+Future<void> preloadFonts() async {
+  if (!kIsWeb) return;
+  for (final w in <FontWeight>[FontWeight.w500, FontWeight.w600, FontWeight.w700, FontWeight.w800]) {
+    AppText.body(weight: w);
+    AppText.display(weight: w);
+  }
+  try {
+    await GoogleFonts.pendingFonts().timeout(const Duration(seconds: 4));
+  } catch (_) {
+    // Slow or offline: start anyway with the fallback font.
+  }
 }

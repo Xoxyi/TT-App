@@ -15,6 +15,7 @@ Future<void> main() async {
     systemNavigationBarColor: AppColors.s1,
     systemNavigationBarIconBrightness: Brightness.light,
   ));
+  await preloadFonts();
   Store store;
   var persistent = true;
   try {

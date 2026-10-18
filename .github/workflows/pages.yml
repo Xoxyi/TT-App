@@ -34,7 +34,7 @@ jobs:
       - run: flutter test
       - name: Build web
         run: >
-          flutter build web --release
+          flutter build web --release --wasm
           --base-href "/${{ github.event.repository.name }}/"
           --dart-define=FITET_PROXY=${{ vars.FITET_PROXY }}
       - uses: actions/configure-pages@v5
