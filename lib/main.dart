@@ -18,7 +18,7 @@ Future<void> main() async {
   Store store;
   var persistent = true;
   try {
-    store = await FileStore.open();
+    store = await openStore();
   } catch (e) {
     // If on-device storage fails, still open the app (without saving).
     debugPrint('Storage unavailable: $e');

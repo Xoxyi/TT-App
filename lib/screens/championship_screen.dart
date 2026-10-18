@@ -190,7 +190,7 @@ Future<void> _link(BuildContext context, Competition c) async {
       ],
     ),
   );
-  if (input == null || input.trim().isEmpty) return;
+  if (input == null || input.trim().isEmpty || !context.mounted) return;
   final messenger = ScaffoldMessenger.of(context);
   final error = await state.linkChampionship(c.id, input);
   messenger

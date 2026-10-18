@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import '../models/models.dart';
+import 'fitet_http.dart';
 
 /// One match row from a FITeT "Scheda incontri" page, seen from the athlete's side.
 class FitetMatchRow {
@@ -552,6 +552,17 @@ String championshipKey(String s) =>
 // Downloads
 // -----------------------------------------------------------------------------
 
+/// The portal answered with an error status.
+class FitetHttpException implements Exception {
+  const FitetHttpException(this.message, this.uri);
+
+  final String message;
+  final Uri uri;
+
+  @override
+  String toString() => '$message (${uri.path})';
+}
+
 /// Downloads pages from the FITeT portal, one at a time (replaceable in tests).
 class FitetClient {
   static const String host = 'portale.fitet.org';
@@ -560,7 +571,10 @@ class FitetClient {
   String? _searchPath;
 
   /// Cookies the portal sets (e.g. the PHP session), sent back like a browser.
-  final Map<String, Cookie> _cookies = <String, Cookie>{};
+  final Map<String, String> _cookies = <String, String>{};
+
+  /// Sends the requests (direct on Android/iOS, through a proxy on the web).
+  final FitetHttp _http = FitetHttp();
 
   /// Longest time one request may take, from connecting to the last byte.
   static const Duration requestTimeout = Duration(seconds: 20);
@@ -574,38 +588,28 @@ class FitetClient {
 
   Future<String> _send(String method, Uri uri,
       {Map<String, String> headers = const <String, String>{}, Map<String, String>? form}) async {
-    final client = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 10)
-      ..idleTimeout = const Duration(seconds: 5)
-      ..userAgent = 'TT-Piciulin club app (low volume)';
     final watch = Stopwatch()..start();
+    final all = <String, String>{...headers};
+    if (_cookies.isNotEmpty) {
+      all['Cookie'] = _cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
+    }
+    List<int>? body;
+    if (form != null) {
+      body = utf8.encode(Uri(queryParameters: form).query);
+      all['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8';
+    }
     try {
-      return await (() async {
-        final request = await client.openUrl(method, uri);
-        headers.forEach((k, v) => request.headers.set(k, v));
-        request.cookies.addAll(_cookies.values);
-        if (form != null) {
-          final body = utf8.encode(Uri(queryParameters: form).query);
-          request.headers.contentType =
-              ContentType('application', 'x-www-form-urlencoded', charset: 'utf-8');
-          request.contentLength = body.length;
-          request.add(body);
-        }
-        final response = await request.close();
-        for (final c in response.cookies) {
-          _cookies[c.name] = Cookie(c.name, c.value);
-        }
-        if (response.statusCode != 200) {
-          await response.drain<void>();
-          throw HttpException('FITeT answered ${response.statusCode}', uri: uri);
-        }
-        final bytes = await response.fold<List<int>>(<int>[], (all, chunk) => all..addAll(chunk));
-        return decodeFitet(bytes);
-      })()
-          .timeout(requestTimeout);
+      final response = await _http.send(method, uri, headers: all, body: body, timeout: requestTimeout);
+      for (final c in response.setCookies) {
+        final pair = c.split(';').first;
+        final eq = pair.indexOf('=');
+        if (eq > 0) _cookies[pair.substring(0, eq).trim()] = pair.substring(eq + 1).trim();
+      }
+      if (response.statusCode != 200) {
+        throw FitetHttpException('FITeT answered ${response.statusCode}', uri);
+      }
+      return decodeFitet(response.bytes);
     } finally {
-      // Also aborts a request that timed out.
-      client.close(force: true);
       debugPrint('FITeT $method ${uri.path} ${watch.elapsedMilliseconds} ms');
     }
   }
@@ -668,7 +672,7 @@ class FitetClient {
   Future<String> searchAthletes(String term) async {
     final paths = _searchPath != null
         ? <String>[_searchPath!]
-        : const <String>['/risultati/ajax.php', '/ajax.php'];
+        : const <String>['/ajax.php', '/risultati/ajax.php'];
     Object error = const FormatException('FITeT search not available');
     for (final path in paths) {
       try {
