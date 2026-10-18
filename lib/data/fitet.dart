@@ -219,7 +219,7 @@ class FitetAthleteHit {
 }
 
 /// Parses the JSON answer of the athlete search:
-/// [{"id":"792524","label":"<span>ZITO</span> ... (31/03/2001)","value":"ZITO ANDREA"}]
+/// [{"id":"792524","label":"<span>ZITO</span> ... (01/01/2000)","value":"ZITO ANDREA"}]
 List<FitetAthleteHit> parseFitetSearch(String body) {
   final text = body.trim();
   if (text.isEmpty || text == 'null') return const <FitetAthleteHit>[];

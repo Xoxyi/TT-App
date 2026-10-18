@@ -7,7 +7,7 @@ import 'package:table_tennis_app/data/store.dart';
 import 'fake_fitet.dart';
 
 const String _searchZito =
-    '[{"id":"792524","label":"<span class=\\"hl_results\\">ZITO</span> <span class=\\"hl_results\\">ANDREA</span> (31/03/2001)","value":"ZITO ANDREA"}]';
+    '[{"id":"792524","label":"<span class=\\"hl_results\\">ZITO</span> <span class=\\"hl_results\\">ANDREA</span> (01/01/2000)","value":"ZITO ANDREA"}]';
 
 Future<AppState> _state([Store? store]) async {
   final state = await AppState.load(store ?? MemoryStore());
@@ -99,7 +99,7 @@ void main() {
     expect(hits.length, 1);
     expect(hits.first.id, '792524');
     expect(hits.first.name, 'ZITO ANDREA');
-    expect(hits.first.birthDate, '31/03/2001');
+    expect(hits.first.birthDate, '01/01/2000');
     expect(parseFitetSearch('[]'), isEmpty);
 
     final a = splitFitetName('JAR ISABELLA MARIA');
