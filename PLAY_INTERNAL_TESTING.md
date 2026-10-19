@@ -13,12 +13,12 @@ Play only accepts apps signed with your own key. In PowerShell:
 
 ```
 mkdir "C:\dev\Table tennis App\keys"
-& "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -genkey -v `
+& "C:\dev\jdk\jdk-17.0.20.1+1\bin\keytool.exe" -genkey -v `
   -keystore "C:\dev\Table tennis App\keys\upload-keystore.jks" `
-  -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+  -storetype PKCS12 -keyalg RSA -keysize 2048 -validity 10000 -alias upload
 ```
 
-(If keytool isn't there, `flutter doctor -v` shows where Android Studio's Java is.)
+(This is the Java that Flutter uses; `flutter doctor -v` shows it.)
 
 Choose a password and answer the questions (name, city…; anything sensible).
 **Back up `upload-keystore.jks` and the password** (e.g. a password manager):
@@ -28,7 +28,7 @@ so it never ends up on GitHub.
 ## 2. Tell the build where the key is
 
 Copy `android\key.properties.example` to `android\key.properties` and fill in
-your password (twice, the same one unless you chose two). `key.properties` is
+your password (twice: with PKCS12 the store and key password are the same). `key.properties` is
 ignored by Git.
 
 ## 3. Build the app bundle
