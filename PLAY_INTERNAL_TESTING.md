@@ -3,7 +3,7 @@
 The app is visible only to the people on your list (up to 100), who install
 it from the Play Store. It never appears in Play Store search.
 
-Android app ID: `com.andreazito.ttpiciulin` (permanent once uploaded).
+Android app ID: `com.andreazito.table_tennis_app` (permanent once uploaded).
 
 ---
 

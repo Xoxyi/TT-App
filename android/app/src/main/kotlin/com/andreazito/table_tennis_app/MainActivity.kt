@@ -1,4 +1,4 @@
-package com.andreazito.ttpiciulin
+package com.andreazito.table_tennis_app
 
 import io.flutter.embedding.android.FlutterActivity
 
