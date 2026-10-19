@@ -17,7 +17,7 @@ workflows:
         - apple
         - firebase
       vars:
-        BUNDLE_ID: com.andreazito.tableTennisApp
+        BUNDLE_ID: com.andreazito.ttpiciulin
       flutter: stable
       xcode: latest
       cocoapods: default

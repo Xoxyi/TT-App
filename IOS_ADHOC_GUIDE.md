@@ -3,7 +3,7 @@
 Only the iPhones you register can install the app. Builds run on Codemagic
 (a Mac in the cloud) and reach your friends through Firebase App Distribution.
 
-iPhone app ID (bundle ID): `com.andreazito.tableTennisApp`
+iPhone app ID (bundle ID): `com.andreazito.ttpiciulin`
 
 ---
 
@@ -28,7 +28,7 @@ With the iPhone connected by cable to your Windows PC:
 ## 3. Register the app and the iPhones (developer.apple.com → Account)
 
 1. **Certificates, IDs & Profiles → Identifiers → +** → App IDs → App.
-   Description `TT Piciulin`, Bundle ID **Explicit**: `com.andreazito.tableTennisApp`.
+   Description `TT Piciulin`, Bundle ID **Explicit**: `com.andreazito.ttpiciulin`.
    No capabilities needed → Register.
 2. **Devices → +** → Platform iOS, a name (e.g. "Marco iPhone") and the UDID.
    Repeat for each friend.
@@ -56,7 +56,7 @@ Codemagic uses it to create and reuse your distribution certificate.
 ## 6. Set up Firebase App Distribution
 
 1. console.firebase.google.com → **Add project** `TT Piciulin` (Analytics not needed).
-2. **Add app → iOS**, bundle ID `com.andreazito.tableTennisApp`, nickname `TT Piciulin`.
+2. **Add app → iOS**, bundle ID `com.andreazito.ttpiciulin`, nickname `TT Piciulin`.
    Skip the config-file and SDK steps (not needed for App Distribution).
 3. Project settings (cog) → **General** → your iOS app → copy the **App ID**
    (looks like `1:1234567890:ios:abc123…`).

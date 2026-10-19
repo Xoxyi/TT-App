@@ -16,8 +16,8 @@ The FITeT president (who works at the club) approved automated, low-volume acces
   label "TT Piciulin". Release signing reads `android/key.properties`
   (template `android/key.properties.example`, keystore outside the repo);
   without it, release builds use the debug key.
-- App ID: Android `com.andreazito.table_tennis_app` (not yet uploaded to Play,
-  can still change), iOS `com.andreazito.tableTennisApp`.
+- App ID (Android and iOS): `com.andreazito.ttpiciulin` (changed 2026-10-19,
+  before the first Play upload; permanent once uploaded).
 
 ## Code map
 - `lib/models/models.dart` — Player (toJson/fromJson, nickname), Competition
