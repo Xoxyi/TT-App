@@ -497,6 +497,117 @@ List<FitetChampionshipLink> parseFitetAthleteChampionships(String html) {
   return out.values.toList();
 }
 
+/// An athlete's FITeT ranking and membership card number. Birth dates on
+/// the same pages are never read.
+class FitetRanking {
+  const FitetRanking({this.card, this.points, this.position, this.category, this.date, this.rankId});
+
+  /// Membership card number ("tessera"), e.g. "995253".
+  final String? card;
+
+  /// Ranking points, e.g. 8692.23.
+  final double? points;
+
+  /// Position in the national individual ranking.
+  final int? position;
+
+  /// Category, e.g. "3" for 3ª categoria, or [foreign].
+  final String? category;
+
+  /// [category] of athletes from abroad: FITeT gives them points but no position.
+  static const String foreign = 'foreign';
+
+  bool get isForeign => category == foreign;
+
+  /// Date of the ranking.
+  final DateTime? date;
+
+  /// FITeT id of the ranking list (ID_CLASS), used to open the ranking card.
+  final String? rankId;
+
+  bool get isEmpty => card == null && points == null && position == null;
+
+  /// These sheet values completed with the ranking card's (which win).
+  FitetRanking withCard(FitetRanking? c) => c == null
+      ? this
+      : FitetRanking(
+          card: card ?? c.card,
+          points: c.points ?? points,
+          position: c.position ?? position,
+          category: c.category ?? category,
+          date: c.date ?? date,
+          rankId: rankId ?? c.rankId,
+        );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        if (card != null) 'card': card,
+        if (points != null) 'points': points,
+        if (position != null) 'position': position,
+        if (category != null) 'category': category,
+        if (date != null) 'date': date!.toIso8601String(),
+        if (rankId != null) 'rankId': rankId,
+      };
+
+  factory FitetRanking.fromJson(Map<String, dynamic> j) => FitetRanking(
+        card: j['card'] as String?,
+        points: (j['points'] as num?)?.toDouble(),
+        position: j['position'] as int?,
+        category: j['category'] as String?,
+        date: j['date'] == null ? null : DateTime.parse(j['date'] as String),
+        rankId: j['rankId'] as String?,
+      );
+}
+
+DateTime? _italianDate(String? s) {
+  final m = RegExp(r'(\d{1,2})/(\d{1,2})/(\d{4})').firstMatch(s ?? '');
+  if (m == null) return null;
+  return DateTime(int.parse(m[3]!), int.parse(m[2]!), int.parse(m[1]!));
+}
+
+/// "8.692,23" -> 8692.23
+double? _italianNumber(String? s) =>
+    s == null ? null : double.tryParse(s.replaceAll('.', '').replaceAll(',', '.'));
+
+/// From the athlete sheet (scheda_unica_i.php): card number, ranking
+/// position (the badge next to "classifica al ..."), ranking date and the
+/// ranking list id. Foreign athletes have a flag instead of a position.
+FitetRanking parseFitetSheetRanking(String html) {
+  final card = RegExp(r"dell'atleta[^<(]*\((\d{4,})\)").firstMatch(html)?.group(1);
+  final row = RegExp(r'class="badge">(.*?)</span>\s*<a([^>]*)>\s*classifica al\s*([\d/]+)',
+          caseSensitive: false, dotAll: true)
+      .firstMatch(html);
+  final position = RegExp(r'^\s*(\d+)\s*$').firstMatch(row?.group(1) ?? '')?.group(1);
+  final link = row?.group(2) ?? html;
+  final rankId = RegExp(r'getScheda\(\s*\d+\s*,\s*(\d+)').firstMatch(link)?.group(1) ??
+      RegExp(r'ID_CLASS=(\d+)').firstMatch(link)?.group(1);
+  return FitetRanking(
+    card: card,
+    position: position == null ? null : int.parse(position),
+    rankId: rankId,
+    date: _italianDate(row?.group(3)),
+  );
+}
+
+/// From the ranking card (new_rank/dettaglioatleta_unica.php): position,
+/// category, points and ranking date.
+FitetRanking parseFitetRankingCard(String html) {
+  final position = RegExp(r'class="classifica"[^>]*>\s*(\d+)\s*<').firstMatch(html)?.group(1);
+  final cat = RegExp(r'>\s*(\d\^|Straniero)(?:&nbsp;?|\s)*punti\s*([\d.,]+)', caseSensitive: false)
+      .firstMatch(html);
+  final category = cat?.group(1);
+  final date = RegExp(r'SCHEDA DETTAGLIO ATLETA AL\s*([\d/]+)', caseSensitive: false).firstMatch(html)?.group(1);
+  return FitetRanking(
+    position: position == null ? null : int.parse(position),
+    category: category == null
+        ? null
+        : category.toLowerCase() == 'straniero'
+            ? FitetRanking.foreign
+            : category.replaceAll('^', ''),
+    points: _italianNumber(cat?.group(2)),
+    date: _italianDate(date),
+  );
+}
+
 /// Name and season of a championship, from testa_campionati.php?CAM=...
 class FitetChampionshipHeader {
   const FitetChampionshipHeader({this.title, this.shortName, this.year});
@@ -667,6 +778,13 @@ class FitetClient {
     }
     return html;
   }
+
+  /// Ranking card of an athlete in ranking list [rankId] (from the sheet).
+  Future<String> fetchRankingCard(String athleteId, String rankId) => get(
+        '/risultati/new_rank/dettaglioatleta_unica.php',
+        <String, String>{'ATLETA': athleteId, 'ID_CLASS': rankId, 'ZU': '0', 'AVVERSARIO': '0'},
+        headers: const <String, String>{'X-Requested-With': 'XMLHttpRequest'},
+      );
 
   Future<String> fetchChampionshipHeader(String cam) =>
       get('/risultati/campionati/testa_campionati.php', <String, String>{'CAM': cam, 'CONC': '0'});

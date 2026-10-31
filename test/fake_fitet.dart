@@ -89,6 +89,12 @@ class FakeFitet extends FitetClient {
   }
 
   @override
+  Future<String> fetchRankingCard(String athleteId, String rankId) async {
+    _hit('card:$athleteId');
+    return page('ranking_card.html');
+  }
+
+  @override
   Future<String> fetchAthleteSheet(String athleteId) async {
     _hit('sheet:$athleteId');
     return sheets[athleteId] ??

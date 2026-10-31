@@ -65,27 +65,25 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
     }
   }
 
-  Future<void> _add({FitetAthleteHit? hit}) async {
+  Future<void> _add({required FitetAthleteHit hit}) async {
     final state = AppScope.of(context);
-    final split = hit == null ? null : splitFitetName(hit.name);
-    final first = TextEditingController(text: split?.firstName ?? '');
-    final last = TextEditingController(text: split?.lastName ?? '');
+    final split = splitFitetName(hit.name);
+    final first = TextEditingController(text: split.firstName);
+    final last = TextEditingController(text: split.lastName);
     final nick = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.s1,
-        title: Text(hit == null ? 'New player' : 'Follow player', style: AppText.display(size: 20)),
+        title: Text('Follow player', style: AppText.display(size: 20)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              if (hit != null) ...<Widget>[
-                Text('FITeT ID ${hit.id}. Matches are imported automatically.',
-                    style: AppText.body(size: 13, color: AppColors.muted, height: 1.4)),
-                const SizedBox(height: 12),
-              ],
+              Text('FITeT ID ${hit.id}. Matches are imported automatically.',
+                  style: AppText.body(size: 13, color: AppColors.muted, height: 1.4)),
+              const SizedBox(height: 12),
               _Field(controller: first, label: 'First name'),
               const SizedBox(height: 10),
               _Field(controller: last, label: 'Last name'),
@@ -115,7 +113,7 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
       firstName: first.text,
       lastName: last.text,
       nickname: nick.text,
-      fitetId: hit?.id,
+      fitetId: hit.id,
     );
     final navigator = Navigator.of(context);
     navigator.pop();
@@ -208,14 +206,6 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
                   ],
                 ),
               ),
-            const SizedBox(height: 18),
-            Center(
-              child: TextButton(
-                onPressed: () => _add(),
-                child: Text('Add a player without FITeT',
-                    style: AppText.body(size: 14, weight: FontWeight.w600, color: AppColors.accentText)),
-              ),
-            ),
           ],
         ),
       ),

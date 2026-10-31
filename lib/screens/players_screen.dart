@@ -63,6 +63,10 @@ class PlayersScreen extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                     <String>[
+                                      if (state.rankingOf(p.id)?.position != null)
+                                        '#${state.rankingOf(p.id)!.position}',
+                                      if (state.rankingOf(p.id)?.points != null)
+                                        '${thousands(state.rankingOf(p.id)!.points!.floor())} pts',
                                       if (p.nickname != null) '“${p.nickname}”',
                                       if (p.worldRank != null) 'World #${p.worldRank}',
                                       if (p.country != null) p.country!,

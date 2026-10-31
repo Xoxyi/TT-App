@@ -60,7 +60,13 @@ The FITeT president (who works at the club) approved automated, low-volume acces
   **only works with XHR headers** (`X-Requested-With: XMLHttpRequest`,
   `Referer: https://portale.fitet.org/risultati/scheda_atleti.php`); plain GET
   returns a stub, POST returns empty. Isabella: CAM 19 = A/2 Gir.B, CAM 204 = C/2 Gir.D.
-- `dettaglioatleta_unica.php` is only a ranking card (no championships).
+- Ranking card `risultati/new_rank/dettaglioatleta_unica.php?ATLETA=&ID_CLASS=&ZU=0&AVVERSARIO=0`
+  (XHR header): position (`<p class="classifica">`), category + points ("3^ punti
+  8.692,23"; foreigners "Straniero", no position). It also shows the birth date:
+  never read it. ID_CLASS (ranking list, ~monthly) comes from the athlete sheet
+  (`getScheda(atleta, ID_CLASS, …)`, or `ID_CLASS=` in a link for foreigners);
+  the sheet also has the card number ("tessera", in the h3 after the name) and
+  the position badge next to "classifica al dd/mm/yyyy".
 - Championship: `classifica_squadre.php?CAM=` (standings), `Calendario.asp?ANNO=&CAM=`
   (fixtures, return legs numbered after first legs), `percentuali.php?CAM=&SQUADRA=`
   (roster with IDA), `dettaglio_percentuali.php?CAM=&SQUADRA=&IDA=` (set scores,
@@ -77,7 +83,9 @@ calendar, roster; 2) missing player ids: roster name match, then name search
 (only if exactly one exact match; daily); 3) per player: set-score pages for
 leagues whose roster has them, then matches page (`applyFitetSheet` dedupes
 against manual/built-in matches, uses calendar dates); 4) per player daily:
-athlete sheet → discover new championships (`_discoverLeague` attaches to the
+athlete sheet → ranking (`_updateRanking`: card number from the sheet,
+ranking card only when the ranking list changes; `fitet_rankings_v1`) →
+discover new championships (`_discoverLeague` attaches to the
 imported competition with the same name, finds team id from standings) →
 `_completeLeague`.
 

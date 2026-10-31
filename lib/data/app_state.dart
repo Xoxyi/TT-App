@@ -45,6 +45,7 @@ class AppState extends ChangeNotifier {
   static const String _playersKey = 'players_v1';
   static const String _fitetSheetsKey = 'fitet_sheets_v1';
   static const String _removedPlayersKey = 'removed_players_v1';
+  static const String _rankingsKey = 'fitet_rankings_v1';
 
   /// Automatic FITeT updates happen at most this often per player.
   static const Duration fitetMinInterval = Duration(hours: 1);
@@ -59,6 +60,12 @@ class AppState extends ChangeNotifier {
 
   /// Ids of built-in matches the user deleted, so they don't come back.
   final Set<String> _deleted = <String>{};
+
+  /// FITeT ranking and card number per player (from the athlete sheet).
+  final Map<String, FitetRanking> _rankings = <String, FitetRanking>{};
+
+  /// The player's FITeT ranking, card number etc., if known.
+  FitetRanking? rankingOf(String playerId) => _rankings[playerId];
 
   /// Built-in players you stopped following.
   final Set<String> _removedPlayers = <String>{};
@@ -160,6 +167,11 @@ class AppState extends ChangeNotifier {
         (jsonDecode(sheets) as Map<String, dynamic>)
             .forEach((k, v) => state._fitetSheets[k] = DateTime.parse(v as String));
       }
+      final rankings = await store.read(_rankingsKey);
+      if (rankings != null) {
+        (jsonDecode(rankings) as Map<String, dynamic>).forEach(
+            (k, v) => state._rankings[k] = FitetRanking.fromJson(v as Map<String, dynamic>));
+      }
       final games = await store.read(_leagueGamesKey);
       if (games != null) {
         for (final j in jsonDecode(games) as List<dynamic>) {
@@ -222,6 +234,7 @@ class AppState extends ChangeNotifier {
           _matchesKey, jsonEncode(_matches.map((m) => m.toJson()).toList()));
       await _store.write(_deletedKey, jsonEncode(_deleted.toList()));
       await _store.write(_removedPlayersKey, jsonEncode(_removedPlayers.toList()));
+      await _store.write(_rankingsKey, jsonEncode(_rankings.map((k, v) => MapEntry(k, v.toJson()))));
       await _store.write(_fitetIdsKey, jsonEncode(_fitetIds));
       await _store.write(_fitetSyncKey,
           jsonEncode(_fitetSync.map((k, v) => MapEntry(k, v.toIso8601String()))));
@@ -439,6 +452,7 @@ class AppState extends ChangeNotifier {
     _fitetSync.remove(playerId);
     _fitetLookup.remove(playerId);
     _fitetSheets.remove(playerId);
+    _rankings.remove(playerId);
     notifyListeners();
     _save();
   }
@@ -569,7 +583,7 @@ class AppState extends ChangeNotifier {
     bool sheetDue(Player p) =>
         (onlyPlayerId == null || p.id == onlyPlayerId) &&
         fitetIdOf(p.id) != null &&
-        due(_fitetSheets[p.id], fitetLookupInterval);
+        (due(_fitetSheets[p.id], fitetLookupInterval) || !_rankings.containsKey(p.id));
     if (leagues.isEmpty && lookups.isEmpty && !players.any(playerDue) && !players.any(sheetDue)) return;
 
     fitetSyncing = true;
@@ -640,7 +654,9 @@ class AppState extends ChangeNotifier {
       _step('${p.shortName}’s championships');
       _fitetSheets[p.id] = DateTime.now();
       try {
-        final html = await fetch(() => fitetClient.fetchAthleteSheet(fitetIdOf(p.id)!));
+        final id = fitetIdOf(p.id)!;
+        final html = await fetch(() => fitetClient.fetchAthleteSheet(id));
+        await _updateRanking(p, id, html, fetch);
         for (final link in parseFitetAthleteChampionships(html)) {
           if (competitions.any((c) => c.fitetCam == link.cam)) continue;
           final c = await _discoverLeague(link, fetch, player: p);
@@ -668,6 +684,28 @@ class AppState extends ChangeNotifier {
   }
 
   final Set<String> _queuedSync = <String>{};
+
+  /// Card number and ranking points from the athlete sheet; position and
+  /// category from the ranking card, downloaded only when a new ranking list
+  /// is out (FITeT publishes one about once a month).
+  Future<void> _updateRanking(Player p, String athleteId, String sheet,
+      Future<String> Function(Future<String> Function()) fetch) async {
+    final fromSheet = parseFitetSheetRanking(sheet);
+    final old = _rankings[p.id];
+    FitetRanking? card;
+    if (fromSheet.rankId != null &&
+        (old == null || old.rankId != fromSheet.rankId || old.points == null)) {
+      try {
+        card = parseFitetRankingCard(
+            await fetch(() => fitetClient.fetchRankingCard(athleteId, fromSheet.rankId!)));
+      } catch (e) {
+        debugPrint('FITeT ranking card failed for ${p.name}: $e');
+      }
+    } else if (old != null && old.rankId == fromSheet.rankId) {
+      card = old;
+    }
+    _rankings[p.id] = fromSheet.withCard(card);
+  }
 
   /// Downloads standings, fixtures and roster of a championship.
   Future<void> _syncLeague(Competition c, Future<String> Function(Future<String> Function()) fetch) async {

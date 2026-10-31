@@ -60,7 +60,6 @@ String thousands(int n) {
   return n < 0 ? '-$buf' : buf.toString();
 }
 
-/// Start of the current table-tennis season (1 September).
 /// 1 → "1st", 2 → "2nd", 11 → "11th".
 String ordinal(int n) {
   final teen = n % 100 >= 11 && n % 100 <= 13;
@@ -72,5 +71,6 @@ String ordinal(int n) {
 String seasonLabel(DateTime start) =>
     '${start.year}/${((start.year + 1) % 100).toString().padLeft(2, '0')}';
 
+/// Start of the current table-tennis season (1 September).
 DateTime seasonStart(DateTime now) =>
     DateTime(now.month >= 9 ? now.year : now.year - 1, 9, 1);

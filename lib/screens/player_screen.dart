@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/app_state.dart';
+import '../data/fitet.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
 import '../utils/format.dart';
@@ -55,6 +56,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
             ),
             const SizedBox(height: 16),
             _ProfileCard(player: p),
+            if (state.rankingOf(p.id) case final r? when !r.isEmpty) ...<Widget>[
+              const SizedBox(height: 10),
+              _RankingCard(ranking: r),
+            ],
             const SizedBox(height: 10),
             _FitetLink(player: p),
             const SizedBox(height: 14),
@@ -358,6 +363,54 @@ class _FitetLink extends StatelessWidget {
             Text('Link',
                 style: AppText.body(size: 14, weight: FontWeight.w700, color: AppColors.accentText)),
             const SizedBox(width: 6),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// FITeT ranking: Italian position, points, category and card number.
+class _RankingCard extends StatelessWidget {
+  const _RankingCard({required this.ranking});
+
+  final FitetRanking ranking;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget cell(String label, String value) => Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(label,
+                  style: AppText.body(size: 12, weight: FontWeight.w600, color: AppColors.muted)),
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(value, style: AppText.body(size: 18, weight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        );
+    final r = ranking;
+    return Panel(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              cell('Italy ranking', r.isForeign ? 'Foreign' : r.position == null ? '–' : '#${r.position}'),
+              cell('Points', r.points == null ? '–' : thousands(r.points!.floor())),
+              cell('Category', r.category == null || r.isForeign ? '–' : '${r.category}ª'),
+              cell('Card no.', r.card ?? '–'),
+            ],
+          ),
+          if (r.date != null) ...<Widget>[
+            const SizedBox(height: 8),
+            Text('FITeT ranking of ${shortDate(r.date!)}',
+                style: AppText.body(size: 12, color: AppColors.muted)),
           ],
         ],
       ),
