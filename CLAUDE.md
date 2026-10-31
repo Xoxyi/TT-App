@@ -78,8 +78,12 @@ The FITeT president (who works at the club) approved automated, low-volume acces
 
 ## Sync (`AppState.syncFitet`)
 Startup + pull-to-refresh; one request at a time, 800 ms pause, 3-minute cap,
-1-hour throttle (forced on refresh). Steps: 1) leagues with CAM: standings,
-calendar, roster; 2) missing player ids: roster name match, then name search
+1-hour throttle (forced on refresh). Without force, a championship is only
+downloaded when `AppState.leagueHasNews` (a played match without result, max
+21 days back; or weekly), and a player's set-score page only when that
+championship was refreshed: an everyday update is ~4 requests (matches pages).
+Progress is shown and saved after each item (`_showProgress`). Steps: 1) leagues
+with CAM: standings, calendar, roster; 2) missing player ids: roster name match, then name search
 (only if exactly one exact match; daily); 3) per player: set-score pages for
 leagues whose roster has them, then matches page (`applyFitetSheet` dedupes
 against manual/built-in matches, uses calendar dates); 4) per player daily:
@@ -101,7 +105,6 @@ imported competition with the same name, finds team id from standings) →
 - The phone now runs the Play build (signed by Google): a locally built APK
   can't update it without uninstalling. Test UI changes on the web build, or
   ship them through Play internal testing.
-- `_discoverLeague` + `_completeLeague` fetch the same standings page twice.
 - Distribution: Play internal testing guide `PLAY_INTERNAL_TESTING.md`;
   iOS Ad Hoc via Codemagic + Firebase: `codemagic.yaml`, `IOS_ADHOC_GUIDE.md`
   (untested). Web: live at https://xoxyi.github.io/TT-App/ (GitHub Pages,

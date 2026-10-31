@@ -90,6 +90,8 @@ void main() {
     final error = await state.linkChampionship(
         c.id, 'https://portale.fitet.org/risultati/campionati/classifica_squadre.php?CAM=999');
     expect(error, isNull);
+    // The standings downloaded to find the team are reused, not downloaded again.
+    expect((state.fitetClient as FakeFitet).count('standings'), 1);
     final linked = state.competition(c.id);
     expect(linked.fitetCam, '999');
     expect(linked.fitetYear, '41');

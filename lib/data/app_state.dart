@@ -573,7 +573,11 @@ class AppState extends ChangeNotifier {
     final leagues = onlyPlayerId != null
         ? <Competition>[]
         : competitions
-            .where((c) => c.isLeague && c.fitetCam != null && due(c.fitetUpdated, fitetMinInterval))
+            .where((c) =>
+                c.isLeague &&
+                c.fitetCam != null &&
+                due(c.fitetUpdated, fitetMinInterval) &&
+                (force || leagueHasNews(c, now)))
             .toList();
     final lookups = onlyPlayerId != null
         ? <Player>[]
@@ -603,14 +607,17 @@ class AppState extends ChangeNotifier {
 
     try {
     // 1. Championships.
+    final refreshed = <String>{};
     for (final c in leagues) {
       _step('Standings · ${c.shortName}');
       try {
         await _syncLeague(c, fetch);
+        refreshed.add(c.id);
       } catch (e) {
         debugPrint('FITeT update failed for ${c.name}: $e');
         errors.add(c.shortName);
       }
+      await _showProgress();
     }
 
     // 2. Missing FITeT ids.
@@ -623,6 +630,7 @@ class AppState extends ChangeNotifier {
       } catch (e) {
         debugPrint('FITeT search failed for ${p.name}: $e');
       }
+      await _showProgress();
     }
 
     // 3. Players' matches.
@@ -633,6 +641,9 @@ class AppState extends ChangeNotifier {
         for (final c in competitions.toList()) {
           if (!c.isLeague || c.fitetCam == null || c.fitetTeam == null) continue;
           if (!c.roster.containsKey(id)) continue;
+          // Set scores change only when the championship has new results.
+          final known = _leagueGames.any((g) => g.playerId == p.id && g.competitionId == c.id);
+          if (!force && known && !refreshed.contains(c.id)) continue;
           final html = await fetch(() => fitetClient.fetchPlayerGamesPage(c.fitetCam!, c.fitetTeam!, id));
           _applyLeagueGames(p, c, parseFitetPlayerGames(html));
         }
@@ -647,6 +658,7 @@ class AppState extends ChangeNotifier {
         debugPrint('FITeT update failed for ${p.name}: $e');
         errors.add(p.shortName);
       }
+      await _showProgress();
     }
 
     // 4. Each player's championships (e.g. A/2), from their FITeT athlete sheet.
@@ -665,6 +677,7 @@ class AppState extends ChangeNotifier {
       } catch (e) {
         debugPrint('FITeT athlete sheet failed for ${p.name}: $e');
       }
+      await _showProgress();
     }
 
     } finally {
@@ -684,6 +697,30 @@ class AppState extends ChangeNotifier {
   }
 
   final Set<String> _queuedSync = <String>{};
+
+  /// Shows and saves what an update has downloaded so far, so results appear
+  /// one by one and aren't lost if the app is closed halfway.
+  Future<void> _showProgress() async {
+    _sort();
+    notifyListeners();
+    await _save();
+  }
+
+  /// Results change only after a match day: a championship needs downloading
+  /// again when one of its matches has been played but its result isn't in
+  /// the app yet (FITeT may take days to publish it), or once a week to catch
+  /// date changes. Pull-to-refresh downloads everything anyway.
+  static bool leagueHasNews(Competition c, DateTime now) {
+    final last = c.fitetUpdated;
+    if (last == null || c.fixtures.isEmpty || c.standings.isEmpty) return true;
+    if (now.difference(last) >= const Duration(days: 7)) return true;
+    for (final f in c.fixtures) {
+      final d = f.date;
+      if (d == null || d.isAfter(now) || f.played) continue;
+      if (now.difference(d) < const Duration(days: 21)) return true;
+    }
+    return false;
+  }
 
   /// Card number and ranking points from the athlete sheet; position and
   /// category from the ranking card, downloaded only when a new ranking list
@@ -707,10 +744,12 @@ class AppState extends ChangeNotifier {
     _rankings[p.id] = fromSheet.withCard(card);
   }
 
-  /// Downloads standings, fixtures and roster of a championship.
-  Future<void> _syncLeague(Competition c, Future<String> Function(Future<String> Function()) fetch) async {
+  /// Downloads standings, fixtures and roster of a championship ([standings]
+  /// when already known, e.g. just downloaded to find the team).
+  Future<void> _syncLeague(Competition c, Future<String> Function(Future<String> Function()) fetch,
+      {List<StandingRow>? standings}) async {
     final cam = c.fitetCam!;
-    final standings = parseFitetStandings(await fetch(() => fitetClient.fetchStandingsPage(cam)));
+    standings ??= parseFitetStandings(await fetch(() => fitetClient.fetchStandingsPage(cam)));
     final year = c.fitetYear ?? '${seasonStart(c.date).year - 1985}';
     final fixtures = parseFitetCalendar(await fetch(() => fitetClient.fetchCalendarPage(cam, year)));
     var roster = c.roster;
@@ -842,8 +881,10 @@ class AppState extends ChangeNotifier {
 
   /// After a championship got its ids: downloads it, then the set scores of
   /// your players in its roster, and fixes their matches' sets and dates.
+  /// Finishes a championship just found by [_discoverLeague] (which already
+  /// downloaded its standings): fixtures, roster and set scores.
   Future<void> _completeLeague(Competition c, Future<String> Function(Future<String> Function()) fetch) async {
-    await _syncLeague(c, fetch);
+    await _syncLeague(c, fetch, standings: c.standings.isEmpty ? null : c.standings);
     final league = competition(c.id);
     if (league.fitetCam == null || league.fitetTeam == null) return;
     for (final p in players.toList()) {

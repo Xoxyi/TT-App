@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:table_tennis_app/data/app_state.dart';
 import 'package:table_tennis_app/data/fitet.dart';
 import 'package:table_tennis_app/data/store.dart';
+import 'package:table_tennis_app/models/models.dart';
 
 import 'fake_fitet.dart';
 
@@ -204,5 +205,43 @@ void main() {
     expect(state.fitetIdOf(p.id), '999009');
     await state.setFitetId(p.id, '123');
     expect(state.fitetIdOf(p.id), '999009');
+  });
+
+  test('a championship is downloaded again only when there can be new results', () {
+    final now = DateTime(2026, 10, 31, 12);
+    Competition league({DateTime? updated, List<Fixture> fixtures = const <Fixture>[]}) => Competition(
+          id: 'c',
+          name: 'C2',
+          shortName: 'C2',
+          type: CompetitionType.league,
+          location: '',
+          date: DateTime(2026, 9, 1),
+          fitetUpdated: updated,
+          fixtures: fixtures,
+          standings: const <StandingRow>[
+            StandingRow(team: 'A', points: 3, played: 1, wins: 1, losses: 0),
+          ],
+        );
+    const played = Fixture(giornata: 1, home: 'A', away: 'B', homeScore: 5, awayScore: 2);
+    final done = <Fixture>[
+      Fixture(giornata: 1, home: 'A', away: 'B', date: DateTime(2026, 10, 10, 16), homeScore: 5, awayScore: 2),
+      Fixture(giornata: 2, home: 'B', away: 'A', date: DateTime(2026, 11, 7, 16)),
+    ];
+    // Never downloaded, or no fixtures yet.
+    expect(AppState.leagueHasNews(league(), now), isTrue);
+    expect(AppState.leagueHasNews(league(updated: now, fixtures: const <Fixture>[played]), now), isFalse);
+    // All past matches have results, the next one is in the future: nothing new.
+    expect(AppState.leagueHasNews(league(updated: DateTime(2026, 10, 30), fixtures: done), now), isFalse);
+    // A match was played and its result isn't in the app yet.
+    final waiting = <Fixture>[
+      done.first,
+      Fixture(giornata: 2, home: 'B', away: 'A', date: DateTime(2026, 10, 31, 10)),
+    ];
+    expect(AppState.leagueHasNews(league(updated: DateTime(2026, 10, 30), fixtures: waiting), now), isTrue);
+    // A result that never came (e.g. postponed) stops counting after three weeks.
+    final old = <Fixture>[Fixture(giornata: 2, home: 'B', away: 'A', date: DateTime(2026, 10, 1))];
+    expect(AppState.leagueHasNews(league(updated: DateTime(2026, 10, 30), fixtures: old), now), isFalse);
+    // Once a week anyway, for date changes.
+    expect(AppState.leagueHasNews(league(updated: DateTime(2026, 10, 20), fixtures: done), now), isTrue);
   });
 }
