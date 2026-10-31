@@ -2,6 +2,8 @@
 /// tournaments) and the matches your players played in them.
 library;
 
+import '../utils/format.dart';
+
 enum CompetitionType { league, tournament, friendly }
 
 class Player {
@@ -265,6 +267,22 @@ class Competition {
 
   bool isMyRow(StandingRow row) =>
       (fitetTeam != null && row.teamId == fitetTeam) || isMine(row.team);
+
+  /// Position (1 = first) and row of your players' team in the standings.
+  ({int position, StandingRow row})? get myStanding {
+    for (var i = 0; i < standings.length; i++) {
+      if (isMyRow(standings[i])) return (position: i + 1, row: standings[i]);
+    }
+    return null;
+  }
+
+  /// e.g. "1st of 8 · 6 pts", or null without standings.
+  String? get standingText {
+    final s = myStanding;
+    if (s == null) return null;
+    final pts = s.row.points == 1 ? 'pt' : 'pts';
+    return '${ordinal(s.position)} of ${standings.length} · ${s.row.points} $pts';
+  }
 
   /// Your team's match in round [giornata], if known.
   Fixture? myFixture(int? giornata) {

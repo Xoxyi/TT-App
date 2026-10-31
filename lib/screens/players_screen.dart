@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/app_state.dart';
 import '../theme/app_theme.dart';
+import '../utils/format.dart';
 import '../widgets/common.dart';
 import 'navigation.dart';
 
@@ -11,7 +12,8 @@ class PlayersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
-    final since = DateTime.now().subtract(const Duration(days: 182));
+    final since = state.defaultSeasonStart();
+    final until = DateTime(since.year + 1, 9, 1);
     return SafeArea(
       bottom: false,
       child: ListView(
@@ -34,7 +36,7 @@ class PlayersScreen extends StatelessWidget {
           const SizedBox(height: 20),
           for (final p in state.players) ...<Widget>[
             Builder(builder: (context) {
-              final st = state.stats(p.id, since: since);
+              final st = state.stats(p.id, since: since, until: until);
               return Panel(
                 onTap: () => openPlayer(context, p.id),
                 child: Row(
@@ -99,7 +101,7 @@ class PlayersScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          Text('Win rate over the last 6 months.',
+          Text('Win rate in the ${seasonLabel(since)} season (singles).',
               textAlign: TextAlign.center,
               style: AppText.body(size: 12, color: AppColors.muted)),
         ],

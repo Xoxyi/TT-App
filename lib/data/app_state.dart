@@ -44,6 +44,7 @@ class AppState extends ChangeNotifier {
   static const String _leagueGamesKey = 'league_games_v1';
   static const String _playersKey = 'players_v1';
   static const String _fitetSheetsKey = 'fitet_sheets_v1';
+  static const String _removedPlayersKey = 'removed_players_v1';
 
   /// Automatic FITeT updates happen at most this often per player.
   static const Duration fitetMinInterval = Duration(hours: 1);
@@ -58,6 +59,9 @@ class AppState extends ChangeNotifier {
 
   /// Ids of built-in matches the user deleted, so they don't come back.
   final Set<String> _deleted = <String>{};
+
+  /// Built-in players you stopped following.
+  final Set<String> _removedPlayers = <String>{};
 
   /// FITeT athlete ids set in the app (override the built-in ones).
   final Map<String, String> _fitetIds = <String, String>{};
@@ -104,6 +108,11 @@ class AppState extends ChangeNotifier {
   static Future<AppState> load(Store store, {bool persistent = true}) async {
     final state = AppState._(store, persistent);
     try {
+      final removed = await store.read(_removedPlayersKey);
+      if (removed != null) {
+        state._removedPlayers.addAll((jsonDecode(removed) as List<dynamic>).cast<String>());
+        state.players.removeWhere((p) => state._removedPlayers.contains(p.id));
+      }
       final added = await store.read(_playersKey);
       if (added != null) {
         for (final j in jsonDecode(added) as List<dynamic>) {
@@ -212,6 +221,7 @@ class AppState extends ChangeNotifier {
       await _store.write(
           _matchesKey, jsonEncode(_matches.map((m) => m.toJson()).toList()));
       await _store.write(_deletedKey, jsonEncode(_deleted.toList()));
+      await _store.write(_removedPlayersKey, jsonEncode(_removedPlayers.toList()));
       await _store.write(_fitetIdsKey, jsonEncode(_fitetIds));
       await _store.write(_fitetSyncKey,
           jsonEncode(_fitetSync.map((k, v) => MapEntry(k, v.toIso8601String()))));
@@ -245,9 +255,11 @@ class AppState extends ChangeNotifier {
         orElse: () => kFriendly,
       );
 
-  List<Match> matchesFor(String playerId, {DateTime? since}) => _matches
+  List<Match> matchesFor(String playerId, {DateTime? since, DateTime? until}) => _matches
       .where((m) =>
-          m.playerId == playerId && (since == null || !m.date.isBefore(since)))
+          m.playerId == playerId &&
+          (since == null || !m.date.isBefore(since)) &&
+          (until == null || m.date.isBefore(until)))
       .toList();
 
   List<Match> matchesIn(String competitionId, {String? playerId}) => _matches
@@ -256,19 +268,35 @@ class AppState extends ChangeNotifier {
           (playerId == null || m.playerId == playerId))
       .toList();
 
-  /// Singles statistics (doubles are listed but not counted).
-  PlayerStats stats(String playerId, {DateTime? since}) => PlayerStats.from(
-      matchesFor(playerId, since: since).where((m) => !m.isDoubles).toList());
+  /// Singles statistics (doubles are listed but not counted), optionally
+  /// for matches from [since] (included) to [until] (excluded).
+  PlayerStats stats(String playerId, {DateTime? since, DateTime? until}) => PlayerStats.from(
+      matchesFor(playerId, since: since, until: until).where((m) => !m.isDoubles).toList());
+
+  /// Start of the season the statistics open on: the current one (from
+  /// 1 September), or the previous one while nobody has played yet this season.
+  DateTime defaultSeasonStart([DateTime? now]) {
+    final current = seasonStart(now ?? DateTime.now());
+    final played = _matches.any((m) => !m.isDoubles && !m.date.isBefore(current) &&
+        players.any((p) => p.id == m.playerId));
+    return played ? current : DateTime(current.year - 1, 9, 1);
+  }
 
   PlayerStats statsIn(String competitionId, String playerId) => PlayerStats.from(
       matchesIn(competitionId, playerId: playerId).where((m) => !m.isDoubles).toList());
 
-  /// Wins and losses per month for the last [months] months.
-  List<MonthBar> monthly(String playerId, {int months = 6}) {
+  /// Wins and losses per month: the months of the season starting at
+  /// [season] (September to August, up to this month), or the last 12 months.
+  List<MonthBar> monthly(String playerId, {DateTime? season}) {
     final now = DateTime.now();
+    final last = season == null || DateTime(season.year + 1, 8, 1).isBefore(now)
+        ? (season == null ? DateTime(now.year, now.month, 1) : DateTime(season.year + 1, 8, 1))
+        : DateTime(now.year, now.month, 1);
+    final first = season ?? DateTime(last.year, last.month - 11, 1);
+    final months = (last.year - first.year) * 12 + last.month - first.month + 1;
     final bars = <MonthBar>[];
-    for (var i = months - 1; i >= 0; i--) {
-      final month = DateTime(now.year, now.month - i, 1);
+    for (var i = 0; i < months; i++) {
+      final month = DateTime(first.year, first.month + i, 1);
       final ms = _matches.where((m) =>
           m.playerId == playerId &&
           !m.isDoubles &&
@@ -360,9 +388,6 @@ class AppState extends ChangeNotifier {
   // Players
   // ---------------------------------------------------------------------------
 
-  /// True for players added in the app (they can be removed).
-  bool isAddedPlayer(String playerId) => !kPlayers.any((p) => p.id == playerId);
-
   /// Adds a player to follow and, with a FITeT id, starts importing their
   /// matches (await [syncFitet] with onlyPlayerId to wait for it).
   Player addPlayer({
@@ -377,6 +402,18 @@ class AppState extends ChangeNotifier {
         ? null
         : players.where((p) => fitetIdOf(p.id) == fid).firstOrNull;
     if (existing != null) return existing;
+    final builtIn = fid == null || fid.isEmpty
+        ? null
+        : kPlayers.where((k) => k.fitetId == fid && _removedPlayers.contains(k.id)).firstOrNull;
+    if (builtIn != null) {
+      _removedPlayers.remove(builtIn.id);
+      players.add(builtIn);
+      _addBuiltIn();
+      notifyListeners();
+      _save();
+      unawaited(syncFitet(force: true, onlyPlayerId: builtIn.id));
+      return builtIn;
+    }
     final p = Player(
       id: fid == null || fid.isEmpty ? _newId('p') : 'fitet_$fid',
       firstName: firstName.trim(),
@@ -391,9 +428,10 @@ class AppState extends ChangeNotifier {
     return p;
   }
 
-  /// Stops following a player added in the app, removing their matches.
+  /// Stops following a player, removing their matches. A built-in player
+  /// stays removed after a restart.
   void removePlayer(String playerId) {
-    if (!isAddedPlayer(playerId)) return;
+    if (kPlayers.any((p) => p.id == playerId)) _removedPlayers.add(playerId);
     players.removeWhere((p) => p.id == playerId);
     _matches.removeWhere((m) => m.playerId == playerId);
     _leagueGames.removeWhere((g) => g.playerId == playerId);
@@ -412,6 +450,8 @@ class AppState extends ChangeNotifier {
   String _newId(String prefix) =>
       '$prefix${DateTime.now().microsecondsSinceEpoch}';
 
+  /// Adds a match by hand (used by tests; the app imports matches from FITeT).
+  @visibleForTesting
   void addMatch({
     required String playerId,
     required String opponent,
@@ -434,14 +474,8 @@ class AppState extends ChangeNotifier {
     _save();
   }
 
-  void deleteMatch(String matchId) {
-    _matches.removeWhere((m) => m.id == matchId);
-    _deleted.add(matchId);
-    notifyListeners();
-    _save();
-  }
-
-  /// Creates a championship or tournament and returns it.
+  /// Creates a championship or tournament and returns it (used by tests).
+  @visibleForTesting
   Competition addCompetition({
     required String name,
     required CompetitionType type,
@@ -477,20 +511,16 @@ class AppState extends ChangeNotifier {
   /// The player's FITeT athlete id (set in the app, or built in).
   String? fitetIdOf(String playerId) => _fitetIds[playerId] ?? player(playerId).fitetId;
 
-  /// Sets (or clears, with an empty string) a player's FITeT id, then updates.
+  /// Links a player who has no FITeT id yet, then imports their matches.
+  /// An id that is already set can't be changed.
   Future<void> setFitetId(String playerId, String id) async {
     final clean = id.trim();
-    if (clean.isEmpty) {
-      _fitetIds.remove(playerId);
-      _matches.removeWhere((m) => m.playerId == playerId && m.isFitet);
-      _leagueGames.removeWhere((g) => g.playerId == playerId);
-    } else {
-      _fitetIds[playerId] = clean;
-    }
+    if (clean.isEmpty || fitetIdOf(playerId) != null) return;
+    _fitetIds[playerId] = clean;
     _fitetSync.remove(playerId);
     notifyListeners();
     await _save();
-    if (clean.isNotEmpty) await syncFitet(force: true, onlyPlayerId: playerId);
+    await syncFitet(force: true, onlyPlayerId: playerId);
   }
 
   /// Most recent successful FITeT update across players.

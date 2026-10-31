@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:table_tennis_app/data/app_state.dart';
 import 'package:table_tennis_app/data/store.dart';
 import 'package:table_tennis_app/models/models.dart';
+import 'package:table_tennis_app/utils/format.dart';
 
 void main() {
   test('match score, winner and points are computed from the sets', () {
@@ -43,16 +44,6 @@ void main() {
     expect(state.matchesFor('jar_isabella').length, 3);
   });
 
-  test('a deleted built-in match does not come back', () async {
-    final store = MemoryStore();
-    final state = await AppState.load(store);
-    state.deleteMatch('r1_2026_10_10_g6');
-    await Future<void>.delayed(Duration.zero);
-    final reloaded = await AppState.load(store);
-    expect(reloaded.matches.length, 7);
-    expect(reloaded.matches.any((m) => m.id == 'r1_2026_10_10_g6'), isFalse);
-  });
-
   test('matches and competitions are saved and loaded again', () async {
     final store = MemoryStore();
     final state = await AppState.load(store);
@@ -80,18 +71,41 @@ void main() {
     expect(reloaded.stats('piciulin_gabriele').wins, 1);
   });
 
-  test('deleting a match updates the stats', () async {
+  test('statistics by season, singles only', () async {
     final state = await AppState.load(MemoryStore());
     state.addMatch(
       playerId: 'jar_isabella',
-      opponent: 'X',
+      opponent: 'Last season',
       competitionId: 'friendly',
-      date: DateTime.now(),
+      date: DateTime(2026, 5, 10),
       sets: const <SetScore>[SetScore(5, 11), SetScore(5, 11), SetScore(5, 11)],
     );
-    expect(state.stats('jar_isabella').losses, 1);
-    final added = state.matches.firstWhere((m) => m.opponent == 'X');
-    state.deleteMatch(added.id);
-    expect(state.stats('jar_isabella').losses, 0);
+    final current = DateTime(2026, 9, 1);
+    final last = DateTime(2025, 9, 1);
+    // Round 1 (October 2026): 2 singles won; the doubles isn't counted.
+    expect(state.stats('jar_isabella', since: current).played, 2);
+    final previous = state.stats('jar_isabella', since: last, until: current);
+    expect(previous.played, 1);
+    expect(previous.losses, 1);
+    expect(state.stats('jar_isabella').played, 3);
+    // In September, before any match of the new season, stats open on the last one.
+    expect(state.defaultSeasonStart(DateTime(2027, 9, 5)), DateTime(2026, 9, 1));
+    expect(state.defaultSeasonStart(DateTime(2026, 10, 20)), DateTime(2026, 9, 1));
+  });
+
+  test('season months and labels', () async {
+    final state = await AppState.load(MemoryStore());
+    final bars = state.monthly('jar_isabella', season: DateTime(2025, 9, 1));
+    expect(bars.length, 12);
+    expect(bars.first.label, 'Sep');
+    expect(bars.last.label, 'Aug');
+    expect(state.monthly('jar_isabella').length, 12);
+    expect(seasonLabel(DateTime(2026, 9, 1)), '2026/27');
+    expect(seasonLabel(DateTime(2099, 9, 1)), '2099/00');
+    expect(ordinal(1), '1st');
+    expect(ordinal(2), '2nd');
+    expect(ordinal(3), '3rd');
+    expect(ordinal(11), '11th');
+    expect(ordinal(22), '22nd');
   });
 }

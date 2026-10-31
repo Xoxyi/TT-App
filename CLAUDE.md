@@ -39,7 +39,16 @@ The FITeT president (who works at the club) approved automated, low-volume acces
   ANNO 41) + round 1 matches.
 - `lib/screens/` — home (Next match card, FITeT status line), players (+ add
   player via FITeT search), player, championship (standings / fixtures /
-  players, "Link to FITeT"), tournament, events, stats, add match/player.
+  players, "Link to FITeT"), tournament, events, stats, add player (FITeT
+  search; also the centre + button). No manual matches: everything comes from
+  FITeT (`addMatch`/`addCompetition` remain for tests only); matches can't be
+  deleted; a FITeT id can be linked once and not changed afterwards.
+- Stats: singles only (doubles listed, not counted); periods by season
+  (1 Sep–31 Aug): player page "This season / Last season / All time", Players
+  and Stats screens use `defaultSeasonStart()` (last season until the new one
+  has matches). Built-in players can be removed (`removed_players_v1`).
+- Match rows show set-by-set points when known (`SetScores`); championship
+  rows show the team's position and points (`Competition.standingText`).
 - `lib/widgets/common.dart` — shared widgets, Emblem logo, `FitetStatusLine`.
 - Tests: `test/fitet_test.dart`, `fitet_league_test.dart`,
   `fitet_discovery_test.dart`, `widget_test.dart`; fake client in
@@ -73,13 +82,17 @@ imported competition with the same name, finds team id from standings) →
 `_completeLeague`.
 
 ## Status / open items
-- Compiles; `flutter test` and `flutter analyze` clean (2026-10-18).
+- Compiles; `flutter test` and `flutter analyze` clean (2026-10-31).
+- Local web check: `flutter build web --release --wasm`, then
+  `python -I app/tool/serve_web.py 8080 app/build/web` (from the parent folder)
+  and `dart run tool/fitet_proxy.dart`.
 - Verified in the web build and on the phone, release APK (2026-10-18):
   A/2 Gir.B (CAM 19, SQUADRA 12019) gets standings, fixtures, roster and set
   scores; Gabriele Piciulin found as 707200 (championships CAM 3 and CAM 47);
   data persists across restarts and the 1-hour throttle holds.
-- To update the phone without losing data use `adb install -r` with the APK
-  (`flutter install` uninstalls first and wipes the app's data).
+- The phone now runs the Play build (signed by Google): a locally built APK
+  can't update it without uninstalling. Test UI changes on the web build, or
+  ship them through Play internal testing.
 - `_discoverLeague` + `_completeLeague` fetch the same standings page twice.
 - Distribution: Play internal testing guide `PLAY_INTERNAL_TESTING.md`;
   iOS Ad Hoc via Codemagic + Firebase: `codemagic.yaml`, `IOS_ADHOC_GUIDE.md`

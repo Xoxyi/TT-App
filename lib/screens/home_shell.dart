@@ -35,7 +35,7 @@ class _HomeShellState extends State<HomeShell> {
       bottomNavigationBar: _BottomBar(
         index: _tab,
         onSelect: _select,
-        onAdd: () => openAddMatch(context),
+        onAdd: () => openAddPlayer(context),
       ),
     );
   }
@@ -79,7 +79,7 @@ class _BottomBar extends StatelessWidget {
                 onTap: () => onSelect(1),
               ),
               Tooltip(
-                message: 'Add match',
+                message: 'Follow a player',
                 child: Material(
                   color: AppColors.accent,
                   shape: const CircleBorder(),
@@ -89,7 +89,7 @@ class _BottomBar extends StatelessWidget {
                     child: const SizedBox(
                       width: 52,
                       height: 52,
-                      child: Icon(Icons.add_rounded,
+                      child: Icon(Icons.person_add_alt_1_rounded,
                           size: 28, color: AppColors.onAccent),
                     ),
                   ),

@@ -17,8 +17,9 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final now = DateTime.now();
+    // Singles only, like the other statistics.
     final week = state.matches
-        .where((m) => !m.date.isAfter(now) && now.difference(m.date).inDays < 7)
+        .where((m) => !m.isDoubles && !m.date.isAfter(now) && now.difference(m.date).inDays < 7)
         .toList();
     final wins = week.where((m) => m.won).length;
     final rate = week.isEmpty ? 0 : (wins * 100 / week.length).round();
@@ -105,14 +106,14 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 4),
           if (recent.isEmpty)
             Panel(
-              onTap: () => openAddMatch(context),
+              onTap: () => openAddPlayer(context),
               child: Row(
                 children: <Widget>[
-                  const IconBadge(Icons.add_rounded),
+                  const IconBadge(Icons.person_add_alt_1_rounded),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'No results yet. Tap here or the + button to add your first match.',
+                      'No results yet. Tap here or the + button to follow a player: their FITeT results appear here.',
                       style: AppText.body(size: 14, color: AppColors.muted, height: 1.4),
                     ),
                   ),
@@ -129,7 +130,6 @@ class HomeScreen extends StatelessWidget {
                       match: recent[i],
                       showDivider: i > 0,
                       onTap: () => openPlayer(context, recent[i].playerId),
-                      onLongPress: () => confirmDeleteMatch(context, recent[i]),
                     ),
                 ],
               ),

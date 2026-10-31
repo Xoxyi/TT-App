@@ -169,7 +169,7 @@ void main() {
     expect(c.fixtures.length, 56);
     expect(c.fitetCam, '204');
     expect(reloaded.player(p.id).nickname, 'Gabri');
-    expect(reloaded.isAddedPlayer(p.id), isTrue);
+    expect(reloaded.players.any((x) => x.id == p.id), isTrue);
     final boero = reloaded
         .matchesIn('ttorino_b_2026_27', playerId: 'zito_andrea')
         .singleWhere((m) => m.opponent == 'Boero Alessandro');
@@ -177,7 +177,32 @@ void main() {
 
     reloaded.removePlayer(p.id);
     expect(reloaded.players.any((x) => x.id == p.id), isFalse);
-    reloaded.removePlayer('zito_andrea'); // built-in players stay
-    expect(reloaded.players.any((x) => x.id == 'zito_andrea'), isTrue);
+    // Built-in players can be removed too, and stay removed after a restart.
+    reloaded.removePlayer('zito_andrea');
+    expect(reloaded.players.any((x) => x.id == 'zito_andrea'), isFalse);
+    expect(reloaded.matchesFor('zito_andrea'), isEmpty);
+    await Future<void>.delayed(Duration.zero); // let the save finish
+    final again = await _state(store);
+    expect(again.players.any((x) => x.id == 'zito_andrea'), isFalse);
+    expect(again.matchesFor('zito_andrea'), isEmpty);
+
+    // Following them again (found by FITeT id) brings back the built-in player.
+    again.fitetClient = FakeFitet();
+    final back = again.addPlayer(firstName: 'Andrea', lastName: 'Zito', fitetId: '792524');
+    expect(back.id, 'zito_andrea');
+    expect(again.players.any((x) => x.id == 'zito_andrea'), isTrue);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('a FITeT id can be linked once but not changed', () async {
+    final state = await _state(MemoryStore());
+    state.fitetClient = FakeFitet();
+    await state.setFitetId('zito_andrea', '111111');
+    expect(state.fitetIdOf('zito_andrea'), '792524');
+    final p = state.addPlayer(firstName: 'No', lastName: 'Id');
+    await state.setFitetId(p.id, '999009');
+    expect(state.fitetIdOf(p.id), '999009');
+    await state.setFitetId(p.id, '123');
+    expect(state.fitetIdOf(p.id), '999009');
   });
 }

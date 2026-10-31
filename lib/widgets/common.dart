@@ -17,10 +17,7 @@ class Emblem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ExcludeSemantics(
-      child: CustomPaint(
-        size: Size.square(size),
-        painter: _EmblemPainter(),
-      ),
+      child: CustomPaint(size: Size.square(size), painter: _EmblemPainter()),
     );
   }
 }
@@ -250,8 +247,10 @@ class ScreenTitle extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         if (subtitle != null) ...<Widget>[
-          Text(subtitle!,
-              style: AppText.body(size: 14, color: AppColors.muted)),
+          Text(
+            subtitle!,
+            style: AppText.body(size: 14, color: AppColors.muted),
+          ),
           const SizedBox(height: 4),
         ],
         Text(title, style: AppText.display(size: 30)),
@@ -290,7 +289,10 @@ class Avatar extends StatelessWidget {
       child: Text(
         initials,
         style: AppText.body(
-            size: size * 0.34, weight: FontWeight.w700, color: foreground),
+          size: size * 0.34,
+          weight: FontWeight.w700,
+          color: foreground,
+        ),
       ),
     );
   }
@@ -321,7 +323,10 @@ class Pill extends StatelessWidget {
       child: Text(
         label,
         style: AppText.body(
-            size: fontSize, weight: FontWeight.w700, color: foreground),
+          size: fontSize,
+          weight: FontWeight.w700,
+          color: foreground,
+        ),
       ),
     );
   }
@@ -335,8 +340,11 @@ class ResultPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return won
-        ? const Pill('Won',
-            background: AppColors.accentSoft, foreground: AppColors.accentText)
+        ? const Pill(
+            'Won',
+            background: AppColors.accentSoft,
+            foreground: AppColors.accentText,
+          )
         : const Pill('Lost');
   }
 }
@@ -381,13 +389,20 @@ class SectionHeader extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Expanded(
-            child: Text(title,
-                style: AppText.display(size: 19, weight: FontWeight.w600)),
+            child: Text(
+              title,
+              style: AppText.display(size: 19, weight: FontWeight.w600),
+            ),
           ),
           if (trailingText != null)
-            Text(trailingText!,
-                style: AppText.body(
-                    size: 13, weight: FontWeight.w600, color: AppColors.muted)),
+            Text(
+              trailingText!,
+              style: AppText.body(
+                size: 13,
+                weight: FontWeight.w600,
+                color: AppColors.muted,
+              ),
+            ),
           if (action != null)
             TextButton(
               onPressed: onAction,
@@ -396,11 +411,14 @@ class SectionHeader extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: const Size(44, 40),
               ),
-              child: Text(action!,
-                  style: AppText.body(
-                      size: 14,
-                      weight: FontWeight.w600,
-                      color: AppColors.accentText)),
+              child: Text(
+                action!,
+                style: AppText.body(
+                  size: 14,
+                  weight: FontWeight.w600,
+                  color: AppColors.accentText,
+                ),
+              ),
             ),
         ],
       ),
@@ -487,7 +505,12 @@ class ProgressBar extends StatelessWidget {
 
 /// Calendar-style date tile ("OCT / 18").
 class DateTile extends StatelessWidget {
-  const DateTile({super.key, required this.date, this.size = 54, this.highlight = false});
+  const DateTile({
+    super.key,
+    required this.date,
+    this.size = 54,
+    this.highlight = false,
+  });
 
   final DateTime date;
   final double size;
@@ -515,7 +538,10 @@ class DateTile extends StatelessWidget {
               color: highlight ? AppColors.accentText : AppColors.muted,
             ),
           ),
-          Text('${date.day}', style: AppText.display(size: size * 0.41, color: fg)),
+          Text(
+            '${date.day}',
+            style: AppText.display(size: size * 0.41, color: fg),
+          ),
         ],
       ),
     );
@@ -543,14 +569,22 @@ class WinRing extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text('${(rate * 100).round()}%',
-                      style: AppText.body(
-                          size: 22, weight: FontWeight.w800, height: 1)),
-                  Text('win rate',
-                      style: AppText.body(
-                          size: 11,
-                          weight: FontWeight.w600,
-                          color: AppColors.muted)),
+                  Text(
+                    '${(rate * 100).round()}%',
+                    style: AppText.body(
+                      size: 22,
+                      weight: FontWeight.w800,
+                      height: 1,
+                    ),
+                  ),
+                  Text(
+                    'win rate',
+                    style: AppText.body(
+                      size: 11,
+                      weight: FontWeight.w600,
+                      color: AppColors.muted,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -581,7 +615,13 @@ class _RingPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
         ..strokeCap = StrokeCap.round;
-      canvas.drawArc(rect, -math.pi / 2, math.pi * 2 * rate.clamp(0.0, 1.0), false, arc);
+      canvas.drawArc(
+        rect,
+        -math.pi / 2,
+        math.pi * 2 * rate.clamp(0.0, 1.0),
+        false,
+        arc,
+      );
     }
   }
 
@@ -600,7 +640,8 @@ class FormDots extends StatelessWidget {
   Widget build(BuildContext context) {
     final wins = results.where((r) => r).length;
     return Semantics(
-      label: 'Last ${results.length}: $wins wins, ${results.length - wins} losses',
+      label:
+          'Last ${results.length}: $wins wins, ${results.length - wins} losses',
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
@@ -613,7 +654,9 @@ class FormDots extends StatelessWidget {
                 color: won ? AppColors.accent : Colors.transparent,
                 shape: BoxShape.circle,
                 border: Border.all(
-                    color: won ? AppColors.accent : AppColors.lossBar, width: 1.5),
+                  color: won ? AppColors.accent : AppColors.lossBar,
+                  width: 1.5,
+                ),
               ),
             ),
         ],
@@ -631,44 +674,57 @@ class MonthChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final maxValue = data.fold<int>(
-        1, (m, b) => math.max(m, math.max(b.wins, b.losses)));
-    Widget bar(int value, Color color) => Container(
-          width: 11,
+      1,
+      (m, b) => math.max(m, math.max(b.wins, b.losses)),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Bars get thinner (and labels shorter) when a whole season is shown.
+        final slot = constraints.maxWidth / math.max(1, data.length);
+        final barWidth = math.min(11.0, math.max(3.0, (slot - 6) / 2));
+        final short = data.length > 8;
+        Widget bar(int value, Color color) => Container(
+          width: barWidth,
           height: math.max(4.0, 76.0 * value / maxValue),
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(6),
           ),
         );
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[
-        for (final b in data)
-          Semantics(
-            label: '${b.label}: ${b.wins} won, ${b.losses} lost',
-            child: Column(
-              children: <Widget>[
-                SizedBox(
-                  height: 80,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: <Widget>[
-                      bar(b.wins, AppColors.accent),
-                      const SizedBox(width: 3),
-                      bar(b.losses, AppColors.lossBar),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(b.label,
-                    style: AppText.body(
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            for (final b in data)
+              Semantics(
+                label: '${b.label}: ${b.wins} won, ${b.losses} lost',
+                child: Column(
+                  children: <Widget>[
+                    SizedBox(
+                      height: 80,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: <Widget>[
+                          bar(b.wins, AppColors.accent),
+                          SizedBox(width: short ? 2 : 3),
+                          bar(b.losses, AppColors.lossBar),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      short ? b.label.substring(0, 1) : b.label,
+                      style: AppText.body(
                         size: 11,
                         weight: FontWeight.w600,
-                        color: AppColors.muted)),
-              ],
-            ),
-          ),
-      ],
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -690,9 +746,14 @@ class LegendDot extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 5),
-        Text(label,
-            style: AppText.body(
-                size: 12, weight: FontWeight.w600, color: AppColors.muted)),
+        Text(
+          label,
+          style: AppText.body(
+            size: 12,
+            weight: FontWeight.w600,
+            color: AppColors.muted,
+          ),
+        ),
       ],
     );
   }
@@ -748,15 +809,23 @@ class MatchTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.body(size: 15, weight: FontWeight.w700)),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.body(size: 15, weight: FontWeight.w700),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.body(size: 13, color: AppColors.muted)),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.body(size: 13, color: AppColors.muted),
+                  ),
+                  if (match.hasSetDetail) ...<Widget>[
+                    const SizedBox(height: 4),
+                    SetScores(sets: match.sets),
+                  ],
                 ],
               ),
             ),
@@ -764,12 +833,52 @@ class MatchTile extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: <Widget>[
-                Text(match.score,
-                    style: AppText.body(size: 17, weight: FontWeight.w800)),
+                Text(
+                  match.score,
+                  style: AppText.body(size: 17, weight: FontWeight.w800),
+                ),
                 const SizedBox(height: 3),
                 ResultPill(won: match.won),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Set-by-set points, e.g. "11-8  9-11  11-6", won sets highlighted.
+class SetScores extends StatelessWidget {
+  const SetScores({super.key, required this.sets});
+
+  final List<SetScore> sets;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Sets: ${sets.join(', ')}',
+      child: ExcludeSemantics(
+        child: Wrap(
+          spacing: 5,
+          runSpacing: 4,
+          children: <Widget>[
+            for (final s in sets)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: s.won ? AppColors.accentSoft : AppColors.s2,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${s.mine}-${s.theirs}',
+                  style: AppText.body(
+                    size: 12,
+                    weight: FontWeight.w700,
+                    color: s.won ? AppColors.accentText : AppColors.muted,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -818,16 +927,20 @@ class ListRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.body(size: 15, weight: FontWeight.w700)),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.body(size: 15, weight: FontWeight.w700),
+                  ),
                   if (subtitle != null) ...<Widget>[
                     const SizedBox(height: 2),
-                    Text(subtitle!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.body(size: 13, color: AppColors.muted)),
+                    Text(
+                      subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.body(size: 13, color: AppColors.muted),
+                    ),
                   ],
                 ],
               ),
@@ -855,7 +968,10 @@ class IconBadge extends StatelessWidget {
     return Container(
       width: 40,
       height: 40,
-      decoration: const BoxDecoration(color: AppColors.s2, shape: BoxShape.circle),
+      decoration: const BoxDecoration(
+        color: AppColors.s2,
+        shape: BoxShape.circle,
+      ),
       child: Icon(icon, size: 20, color: color),
     );
   }
@@ -869,40 +985,12 @@ class EmptyNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Panel(
-      child: Text(text,
-          style: AppText.body(size: 14, color: AppColors.muted, height: 1.4)),
-    );
-  }
-}
-
-/// Asks for confirmation, then deletes a match.
-Future<void> confirmDeleteMatch(BuildContext context, Match match) async {
-  final state = AppScope.of(context);
-  final player = state.player(match.playerId);
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: AppColors.s1,
-      title: Text('Delete match?', style: AppText.display(size: 20)),
-      content: Text(
-        '${player.name} vs ${match.opponent}, ${match.score} on ${shortDate(match.date)}.',
+      child: Text(
+        text,
         style: AppText.body(size: 14, color: AppColors.muted, height: 1.4),
       ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text('Cancel', style: AppText.body(size: 14, weight: FontWeight.w600)),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: Text('Delete',
-              style: AppText.body(
-                  size: 14, weight: FontWeight.w700, color: const Color(0xFFFF8A80))),
-        ),
-      ],
-    ),
-  );
-  if (ok == true) state.deleteMatch(match.id);
+    );
+  }
 }
 
 /// "FITeT · updated 5 min ago" line with a refresh button (or progress/error).
@@ -937,7 +1025,9 @@ class FitetStatusLine extends StatelessWidget {
       button: available && !state.fitetSyncing,
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: !available || state.fitetSyncing ? null : () => state.syncFitet(force: true),
+        onTap: !available || state.fitetSyncing
+            ? null
+            : () => state.syncFitet(force: true),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
@@ -946,14 +1036,23 @@ class FitetStatusLine extends StatelessWidget {
                 const SizedBox(
                   width: 14,
                   height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.accent,
+                  ),
                 )
               else
                 Icon(Icons.sync_rounded, size: 16, color: color),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(text,
-                    style: AppText.body(size: 13, weight: FontWeight.w600, color: color)),
+                child: Text(
+                  text,
+                  style: AppText.body(
+                    size: 13,
+                    weight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
               ),
             ],
           ),

@@ -51,7 +51,7 @@ class EventsScreen extends StatelessWidget {
           const SizedBox(height: 4),
           if (leagues.isEmpty)
             const EmptyNote(
-                'No championships yet. When you add a match, choose Competition › New competition to create one.')
+                'No championships yet. They appear here once your players have FITeT results.')
           else
           _Group(children: <Widget>[
             for (var i = 0; i < leagues.length; i++)
@@ -69,7 +69,7 @@ class EventsScreen extends StatelessWidget {
           const SizedBox(height: 4),
           if (past.isEmpty)
             const EmptyNote(
-                'No tournaments yet. When you add a match, choose Competition › New competition, e.g. "WTT Champions Frankfurt".')
+                'No tournaments yet. They appear here once your players have FITeT results.')
           else
           _Group(children: <Widget>[
             for (var i = 0; i < past.length; i++)
@@ -93,6 +93,7 @@ class EventsScreen extends StatelessWidget {
   static String _leagueSubtitle(Competition c) {
     final parts = <String>[
       if (c.subtitle != null) c.subtitle!,
+      if (c.standingText != null) c.standingText!,
       if (c.roundsPlayed != null && c.roundsTotal != null)
         'Round ${c.roundsPlayed} of ${c.roundsTotal}',
     ];

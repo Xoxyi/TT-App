@@ -61,5 +61,16 @@ String thousands(int n) {
 }
 
 /// Start of the current table-tennis season (1 September).
+/// 1 → "1st", 2 → "2nd", 11 → "11th".
+String ordinal(int n) {
+  final teen = n % 100 >= 11 && n % 100 <= 13;
+  final suffix = teen ? 'th' : switch (n % 10) { 1 => 'st', 2 => 'nd', 3 => 'rd', _ => 'th' };
+  return '$n$suffix';
+}
+
+/// Season starting on [start] (1 September) → "2026/27".
+String seasonLabel(DateTime start) =>
+    '${start.year}/${((start.year + 1) % 100).toString().padLeft(2, '0')}';
+
 DateTime seasonStart(DateTime now) =>
     DateTime(now.month >= 9 ? now.year : now.year - 1, 9, 1);

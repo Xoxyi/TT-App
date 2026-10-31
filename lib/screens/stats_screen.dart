@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/app_state.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
+import '../utils/format.dart';
 import '../widgets/common.dart';
 import 'navigation.dart';
 
@@ -12,9 +13,11 @@ class StatsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
-    final since = DateTime.now().subtract(const Duration(days: 182));
+    final since = state.defaultSeasonStart();
+    final until = DateTime(since.year + 1, 9, 1);
     final rows = <({Player player, PlayerStats stats})>[
-      for (final p in state.players) (player: p, stats: state.stats(p.id, since: since)),
+      for (final p in state.players)
+        (player: p, stats: state.stats(p.id, since: since, until: until)),
     ]..sort((a, b) => b.stats.winRate.compareTo(a.stats.winRate));
 
     final total = rows.fold<int>(0, (s, r) => s + r.stats.played);
@@ -25,7 +28,7 @@ class StatsScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
         children: <Widget>[
-          const ScreenTitle('Stats', subtitle: 'Last 6 months'),
+          ScreenTitle('Stats', subtitle: 'Season ${seasonLabel(since)} · singles'),
           const SizedBox(height: 20),
           Row(
             children: <Widget>[

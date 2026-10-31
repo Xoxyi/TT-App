@@ -17,21 +17,26 @@ class PlayerScreen extends StatefulWidget {
 }
 
 class _PlayerScreenState extends State<PlayerScreen> {
-  int _period = 0; // 0 = 6 months, 1 = this season, 2 = all time
-
-  DateTime? _since(DateTime now) => switch (_period) {
-        0 => now.subtract(const Duration(days: 182)),
-        1 => seasonStart(now),
-        _ => null,
-      };
+  int? _period; // 0 = this season, 1 = last season, 2 = all time
 
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final p = state.player(widget.playerId);
-    final now = DateTime.now();
-    final st = state.stats(p.id, since: _since(now));
-    final months = state.monthly(p.id);
+    final current = seasonStart(DateTime.now());
+    final last = DateTime(current.year - 1, 9, 1);
+    // Opens on last season until this season's first match.
+    final period = _period ??
+        (state.stats(p.id, since: current).played == 0 &&
+                state.stats(p.id, since: last, until: current).played > 0
+            ? 1
+            : 0);
+    final st = switch (period) {
+      0 => state.stats(p.id, since: current),
+      1 => state.stats(p.id, since: last, until: current),
+      _ => state.stats(p.id),
+    };
+    final months = state.monthly(p.id, season: switch (period) { 0 => current, 1 => last, _ => null });
     final comps = state.competitionsFor(p.id);
     final latest = state.matchesFor(p.id).take(8).toList();
 
@@ -42,17 +47,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
           children: <Widget>[
             DetailHeader(
               title: 'Player',
-              trailing: state.isAddedPlayer(p.id)
-                  ? CircleIconButton(
-                      icon: Icons.person_remove_alt_1_rounded,
-                      tooltip: 'Stop following',
-                      onPressed: () => _confirmRemove(context, p),
-                    )
-                  : const CircleIconButton(
-                      icon: Icons.star_rounded,
-                      tooltip: 'Following',
-                      color: AppColors.accent,
-                    ),
+              trailing: CircleIconButton(
+                icon: Icons.person_remove_alt_1_rounded,
+                tooltip: 'Stop following',
+                onPressed: () => _confirmRemove(context, p),
+              ),
             ),
             const SizedBox(height: 16),
             _ProfileCard(player: p),
@@ -60,8 +59,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
             _FitetLink(player: p),
             const SizedBox(height: 14),
             SegmentedTabs(
-              labels: const <String>['6 months', 'This season', 'All time'],
-              index: _period,
+              labels: const <String>['This season', 'Last season', 'All time'],
+              index: period,
               onChanged: (i) => setState(() => _period = i),
             ),
             const SizedBox(height: 14),
@@ -123,7 +122,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   Row(
                     children: <Widget>[
                       Expanded(
-                        child: Text('Matches by month',
+                        child: Text(period == 2 ? 'Last 12 months' : 'Matches by month',
                             style: AppText.display(size: 17, weight: FontWeight.w600)),
                       ),
                       const LegendDot(color: AppColors.accent, label: 'Won'),
@@ -155,12 +154,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
               ),
             ],
             const SizedBox(height: 16),
-            SectionHeader('Latest matches',
-                action: 'Add', onAction: () => openAddMatch(context, playerId: p.id)),
+            const SectionHeader('Latest matches'),
             const SizedBox(height: 4),
             if (latest.isEmpty)
-              EmptyNote('No matches for ${p.shortName} yet. Tap Add to enter the first one.')
-            else ...<Widget>[
+              EmptyNote('No matches for ${p.shortName} yet. They appear here once FITeT has them.')
+            else
               Panel(
                 padding: EdgeInsets.zero,
                 child: Column(
@@ -170,16 +168,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         match: latest[i],
                         showPlayer: false,
                         showDivider: i > 0,
-                        onLongPress: () => confirmDeleteMatch(context, latest[i]),
                       ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Text('Press and hold a match to delete it.',
-                  textAlign: TextAlign.center,
-                  style: AppText.body(size: 12, color: AppColors.muted)),
-            ],
           ],
         ),
       ),
@@ -194,7 +186,9 @@ Future<void> _confirmRemove(BuildContext context, Player p) async {
     builder: (context) => AlertDialog(
       backgroundColor: AppColors.s1,
       title: Text('Stop following ${p.shortName}?', style: AppText.display(size: 20)),
-      content: Text('${p.name} and all their matches will be removed from the app.',
+      content: Text(
+          '${p.name} and all their matches will be removed from the app. '
+          'You can follow them again by searching their name on FITeT.',
           style: AppText.body(size: 14, color: AppColors.muted, height: 1.4)),
       actions: <Widget>[
         TextButton(
@@ -283,7 +277,7 @@ class _ProfileCard extends StatelessWidget {
   }
 }
 
-/// Shows the player's FITeT athlete id and lets you set or change it.
+/// Shows the player's FITeT athlete id; lets you link one only if it's missing.
 class _FitetLink extends StatelessWidget {
   const _FitetLink({required this.player});
 
@@ -303,7 +297,7 @@ class _FitetLink extends StatelessWidget {
           children: <Widget>[
             Text(
               'Open ${player.shortName}’s card on portale.fitet.org: the ID is the '
-              'number after ATLETA= in the address (e.g. 792524). Leave empty to unlink.',
+              'number after ATLETA= in the address (e.g. 792524). It can’t be changed later.',
               style: AppText.body(size: 13, color: AppColors.muted, height: 1.4),
             ),
             const SizedBox(height: 12),
@@ -334,7 +328,7 @@ class _FitetLink extends StatelessWidget {
         ],
       ),
     );
-    if (result == null) return;
+    if (result == null || result.trim().isEmpty) return;
     await state.setFitetId(player.id, result.replaceAll(RegExp(r'[^0-9]'), ''));
   }
 
@@ -345,7 +339,7 @@ class _FitetLink extends StatelessWidget {
     final fitetCount = state.matchesFor(player.id).where((m) => m.isFitet).length;
     return Panel(
       padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
-      onTap: () => _edit(context),
+      onTap: id == null ? () => _edit(context) : null,
       child: Row(
         children: <Widget>[
           const Icon(Icons.link_rounded, size: 20, color: AppColors.accentText),
@@ -360,9 +354,11 @@ class _FitetLink extends StatelessWidget {
               style: AppText.body(size: 14, weight: FontWeight.w600),
             ),
           ),
-          Text(id == null ? 'Link' : 'Edit',
-              style: AppText.body(size: 14, weight: FontWeight.w700, color: AppColors.accentText)),
-          const SizedBox(width: 6),
+          if (id == null) ...<Widget>[
+            Text('Link',
+                style: AppText.body(size: 14, weight: FontWeight.w700, color: AppColors.accentText)),
+            const SizedBox(width: 6),
+          ],
         ],
       ),
     );
@@ -450,7 +446,10 @@ class _CompetitionRow extends StatelessWidget {
       final st = state.statsIn(competition.id, playerId);
       trailing = Text('${st.wins}–${st.losses}',
           style: AppText.body(size: 14, weight: FontWeight.w700));
-      subtitle = competition.subtitle ?? 'Championship';
+      subtitle = <String>[
+        competition.myTeam ?? competition.subtitle ?? 'Championship',
+        if (competition.standingText != null) competition.standingText!,
+      ].join(' · ');
     }
     return ListRow(
       leading: IconBadge(competition.isTournament

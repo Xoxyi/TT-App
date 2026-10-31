@@ -552,7 +552,6 @@ class _OurMatches extends StatelessWidget {
               match: matches[i],
               showDivider: i > 0,
               onTap: () => openPlayer(context, matches[i].playerId),
-              onLongPress: () => confirmDeleteMatch(context, matches[i]),
             ),
         ],
       ),
